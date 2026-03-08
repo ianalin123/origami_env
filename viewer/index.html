@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Origami RL</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -23,6 +23,7 @@
   --accent: #c0392b;
   --accent-soft: #f5eeec;
   --success: #27ae60;
+  --code-bg: #f3f1ee;
   --shadow-sm: 0 1px 3px rgba(26,24,22,0.04);
   --shadow-md: 0 4px 16px rgba(26,24,22,0.06);
   --shadow-lg: 0 8px 32px rgba(26,24,22,0.08);
@@ -38,30 +39,394 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* --- VIEW MANAGEMENT --- */
+.view { display: none; }
+.view.active { display: block; }
+#detail-view.active { display: flex; }
+
 /* --- HEADER --- */
 header {
-  padding: 32px 48px 24px;
+  padding: 28px 48px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.header-left {
   display: flex;
   align-items: baseline;
-  gap: 16px;
+  gap: 14px;
 }
 
 header h1 {
   font-family: 'Instrument Serif', serif;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.02em;
 }
 
-header span {
-  font-size: 13px;
+.header-tag {
+  font-size: 11px;
   color: var(--text-tertiary);
+  font-weight: 400;
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 16px;
+  font-family: inherit;
+  font-weight: 400;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+
+.nav-btn:hover {
+  border-color: var(--border-hover);
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW 1 — LANDING PAGE
+   ═══════════════════════════════════════════════════════════ */
+
+#landing-view {
+  min-height: 100vh;
+}
+
+.landing-content {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 48px 48px 80px;
+}
+
+/* Hero */
+.hero {
+  margin-bottom: 56px;
+}
+
+.hero p {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-weight: 300;
+  max-width: 640px;
+}
+
+/* Section headings */
+.section {
+  margin-bottom: 48px;
+}
+
+.section h2 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+.section h3 {
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
+}
+
+/* How it works — 3-step flow */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+
+.step-num {
+  font-family: 'Instrument Serif', serif;
+  font-size: 28px;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.step-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.step-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+/* API Reference */
+.api-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.api-row {
+  padding: 14px 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.api-row:last-child {
+  border-bottom: none;
+}
+
+.api-method {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  min-width: 48px;
+  text-align: center;
+}
+
+.api-method.ws {
+  color: var(--valley);
+  background: #eaf2f8;
+}
+
+.api-path {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.api-desc {
+  color: var(--text-secondary);
+  font-weight: 300;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Schema / FOLD format */
+.schema-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.schema-row {
+  padding: 12px 20px;
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.schema-row:last-child {
+  border-bottom: none;
+}
+
+.schema-field {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+.schema-type {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  min-width: 130px;
+  flex-shrink: 0;
+}
+
+.schema-desc {
+  color: var(--text-secondary);
   font-weight: 300;
 }
 
-/* --- GRID VIEW --- */
+.schema-tag {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+}
+
+.schema-tag.required {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.schema-tag.optional {
+  color: var(--text-tertiary);
+  background: var(--code-bg);
+}
+
+/* Tasks table — removed */
+
+.tasks-table .task-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tasks-table .task-diff {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.tasks-table .task-diff .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tasks-table .task-diff .dot.empty {
+  background: var(--border);
+}
+
+.tasks-table .task-desc {
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+
+/* Code block */
+.code-block {
+  background: #2b2926;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.code-header {
+  padding: 10px 20px;
+  font-size: 11px;
+  color: #a09a92;
+  border-bottom: 1px solid #3d3a36;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.code-block pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #e8e4df;
+}
+
+.copy-btn {
+  background: none;
+  border: 1px solid #3d3a36;
+  border-radius: 4px;
+  color: #a09a92;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  border-color: #666;
+  color: #e8e4df;
+}
+
+.copy-btn.copied {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.code-block .kw { color: #e67e22; }
+.code-block .str { color: #27ae60; }
+.code-block .cmt { color: #7a756e; }
+.code-block .fn { color: #d4a96a; }
+.code-block .num { color: #c0392b; }
+
+/* Inline code */
+.section code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+/* WebSocket message blocks */
+.ws-block {
+  background: var(--code-bg);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin: 8px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+  overflow-x: auto;
+}
+
+.ws-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW 2 — GRID
+   ═══════════════════════════════════════════════════════════ */
+
 #grid-view {
-  padding: 0 48px 64px;
+  min-height: 100vh;
+}
+
+.grid-content {
+  padding: 32px 48px 64px;
 }
 
 .grid {
@@ -146,19 +511,13 @@ header span {
   text-align: right;
 }
 
-/* --- DETAIL VIEW --- */
+/* ═══════════════════════════════════════════════════════════
+   VIEW 3 — DETAIL
+   ═══════════════════════════════════════════════════════════ */
+
 #detail-view {
-  display: none;
   height: 100vh;
   flex-direction: column;
-}
-
-#detail-view.active {
-  display: flex;
-}
-
-#grid-view.hidden {
-  display: none;
 }
 
 .detail-header {
@@ -210,7 +569,6 @@ header span {
   min-height: 0;
 }
 
-/* 2D crease pattern panel */
 .panel-2d {
   border-right: 1px solid var(--border);
   background: var(--surface);
@@ -260,7 +618,6 @@ header span {
   border-radius: 1px;
 }
 
-/* 3D viewer panel */
 .panel-3d {
   background: var(--bg);
   position: relative;
@@ -359,7 +716,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .metric-value.mid { color: #e67e22; }
 .metric-value.low { color: var(--accent); }
 
-/* --- ANIMATIONS --- */
+/* ═══════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════ */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -373,24 +733,303 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .card:nth-child(2) { animation-delay: 0.1s; }
 .card:nth-child(3) { animation-delay: 0.15s; }
 .card:nth-child(4) { animation-delay: 0.2s; }
+
+.section {
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.section:nth-child(1) { animation-delay: 0.05s; }
+.section:nth-child(2) { animation-delay: 0.1s; }
+.section:nth-child(3) { animation-delay: 0.15s; }
+.section:nth-child(4) { animation-delay: 0.2s; }
+.section:nth-child(5) { animation-delay: 0.25s; }
+.section:nth-child(6) { animation-delay: 0.3s; }
+.section:nth-child(7) { animation-delay: 0.35s; }
+
+/* Responsive */
+@media (max-width: 680px) {
+  header { padding: 20px 24px; }
+  .landing-content { padding: 32px 24px 64px; }
+  .grid-content { padding: 24px; }
+  .steps { grid-template-columns: 1fr; }
+  .schema-row { flex-direction: column; gap: 4px; }
+  .schema-type { min-width: 0; }
+  .schema-field { min-width: 0; }
+  .api-row { flex-direction: column; gap: 6px; }
+  .api-desc { margin-left: 0; }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Origami RL</h1>
-  <span>fold pattern explorer</span>
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER (shared, content swapped by JS)
+     ═══════════════════════════════════════════════════════════ -->
+<header id="main-header">
+  <div class="header-left">
+    <h1 id="header-title">Origami RL</h1>
+    <span class="header-tag" id="header-tag">environment</span>
+  </div>
+  <button class="nav-btn" id="header-nav" onclick="showView('grid')">Origamis &rarr;</button>
 </header>
 
-<!-- GRID VIEW -->
-<div id="grid-view">
-  <div class="grid" id="grid"></div>
+<!-- ═══════════════════════════════════════════════════════════
+     VIEW 1 — LANDING PAGE
+     ═══════════════════════════════════════════════════════════ -->
+<div id="landing-view" class="view active">
+  <div class="landing-content">
+
+    <!-- Hero -->
+    <div class="hero section">
+      <p>OpenEnv RL environment for origami folding. Submit FOLD crease patterns, get physics simulation + shape similarity reward.</p>
+      <p style="margin-top:12px;font-size:14px;color:var(--text-tertiary);font-weight:300">Rewards inspired by AlphaFold &mdash; chamfer distance shape matching with rotational alignment across 24 orientations.</p>
+    </div>
+
+    <!-- How It Works -->
+    <div class="section">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Reset</div>
+          <div class="step-desc">Pick a task &rarr; get target shape and flat paper starting state</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Step</div>
+          <div class="step-desc">Submit a FOLD JSON crease pattern describing your fold</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Reward</div>
+          <div class="step-desc">shape_similarity &times; 20.0 &mdash; score from 0 to 20</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOLD Format -->
+    <div class="section">
+      <h2>FOLD Format</h2>
+      <div class="schema-card">
+        <div class="schema-row">
+          <span class="schema-field">vertices_coords</span>
+          <span class="schema-type">[[x,y], ...]</span>
+          <span class="schema-desc">Vertex positions<span class="schema-tag required">required</span></span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">edges_vertices</span>
+          <span class="schema-type">[[v1,v2], ...]</span>
+          <span class="schema-desc">Edge connectivity<span class="schema-tag required">required</span></span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">edges_assignment</span>
+          <span class="schema-type">["B"|"M"|"V"|"F"|"U"]</span>
+          <span class="schema-desc">Edge types. Need &ge;1 M or V, &ge;1 B<span class="schema-tag required">required</span></span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">edges_foldAngle</span>
+          <span class="schema-type">[degrees, ...]</span>
+          <span class="schema-desc">Fold angles. Defaults: V&rarr;180&deg;, M&rarr;&minus;180&deg;<span class="schema-tag optional">optional</span></span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">faces_vertices</span>
+          <span class="schema-type">[[v0,v1,...], ...]</span>
+          <span class="schema-desc">Face polygons. Auto-computed if missing<span class="schema-tag optional">optional</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observation -->
+    <div class="section">
+      <h2>Observation</h2>
+      <div class="schema-card">
+        <div class="schema-row">
+          <span class="schema-field">shape_similarity</span>
+          <span class="schema-type">float 0.0&ndash;1.0</span>
+          <span class="schema-desc">Procrustes match to target shape</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">final_positions</span>
+          <span class="schema-type">[[x,y,z], ...]</span>
+          <span class="schema-desc">Folded vertex positions</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">target_positions</span>
+          <span class="schema-type">[[x,y,z], ...]</span>
+          <span class="schema-desc">Expected target positions</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">max_strain</span>
+          <span class="schema-type">float</span>
+          <span class="schema-desc">Edge deformation metric</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">is_stable</span>
+          <span class="schema-type">bool</span>
+          <span class="schema-desc">Convergence flag</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">reward</span>
+          <span class="schema-type">float</span>
+          <span class="schema-desc">similarity &times; 20.0, or &minus;2.0 on error</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Rewards -->
+    <div class="section">
+      <h2>Rewards</h2>
+      <p style="font-size:14px;color:var(--text-secondary);font-weight:300;line-height:1.6;margin-bottom:20px">
+        The environment computes reward from the physics simulation result. Two reward functions are available for training:
+      </p>
+      <div class="schema-card">
+        <div class="schema-row">
+          <span class="schema-field">valid_fold</span>
+          <span class="schema-type">format reward</span>
+          <span class="schema-desc">+1.0 valid FOLD JSON, &minus;0.5 parseable but invalid structure, &minus;2.0 not parseable</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">shape_match</span>
+          <span class="schema-type">main reward</span>
+          <span class="schema-desc">similarity &times; 20.0 (0&ndash;20). &minus;1.0 if simulation fails, &minus;2.0 if invalid</span>
+        </div>
+      </div>
+      <h3 style="margin-top:24px">How shape_similarity is computed</h3>
+      <div class="schema-card">
+        <div class="schema-row">
+          <span class="schema-field">1. Simulate</span>
+          <span class="schema-desc">Run physics engine on submitted crease pattern &rarr; get final 3D vertex positions</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">2. Center</span>
+          <span class="schema-desc">Center both predicted and target point clouds at origin</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">3. Align</span>
+          <span class="schema-desc">Try 24 rotation alignments (90&deg; rotations + mirrors) to handle equivalent orientations</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">4. Chamfer</span>
+          <span class="schema-desc">Bidirectional nearest-neighbor distance, normalized by bounding box diagonal</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">5. Score</span>
+          <span class="schema-desc">similarity = 1 &minus; (chamfer / diagonal), clamped to [0, 1]. Reward = similarity &times; 20</span>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-tertiary);font-weight:300;line-height:1.5;margin-top:12px">
+        <code>max_strain</code> measures edge length deviation after folding (0 = no deformation). <code>is_stable</code> indicates whether the simulation converged.
+      </p>
+    </div>
+
+    <!-- API Reference -->
+    <div class="section">
+      <h2>API Reference</h2>
+      <h3>WebSocket</h3>
+      <div class="api-group">
+        <div class="api-row">
+          <span class="api-method ws">WS</span>
+          <span class="api-path">/ws</span>
+          <span class="api-desc">Persistent connection</span>
+        </div>
+      </div>
+      <div class="ws-label">Send: Reset</div>
+      <div class="ws-block">{"type": "reset", "data": {"task_name": "triangle"}}</div>
+      <div class="ws-label">Send: Step</div>
+      <div class="ws-block">{"type": "step", "data": {"fold_data": {...}}}</div>
+      <div class="ws-label">Receive: Observation</div>
+      <div class="ws-block">{"type": "observation", "data": {"reward": 20.0, "done": true, ...}}</div>
+
+      <h3 style="margin-top:24px">REST</h3>
+      <div class="api-group">
+        <div class="api-row">
+          <span class="api-method">POST</span>
+          <span class="api-path">/sessions</span>
+          <span class="api-desc">Create session</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method">POST</span>
+          <span class="api-path">/sessions/{id}/reset</span>
+          <span class="api-desc">Reset with task_name</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method">POST</span>
+          <span class="api-path">/sessions/{id}/step</span>
+          <span class="api-desc">Submit fold action</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method" style="background:#eaf2f8;color:var(--valley)">GET</span>
+          <span class="api-path">/tasks</span>
+          <span class="api-desc">List all tasks</span>
+        </div>
+        <div class="api-row">
+          <span class="api-method" style="background:#eaf2f8;color:var(--valley)">GET</span>
+          <span class="api-path">/tasks/{name}</span>
+          <span class="api-desc">Task detail + target fold</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="section">
+      <h2>Quick Start</h2>
+      <div class="code-block">
+        <div class="code-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+        <pre><span class="kw">from</span> origami_env.client <span class="kw">import</span> OrigamiEnv
+<span class="kw">from</span> origami_env.models <span class="kw">import</span> OrigamiAction
+
+<span class="kw">with</span> <span class="fn">OrigamiEnv</span>(base_url=<span class="str">"http://localhost:8000"</span>) <span class="kw">as</span> env:
+    env.<span class="fn">reset</span>(task_name=<span class="str">"triangle"</span>)
+    result = env.<span class="fn">step</span>(<span class="fn">OrigamiAction</span>(fold_data={
+        <span class="str">"vertices_coords"</span>: [[<span class="num">0</span>,<span class="num">0</span>],[<span class="num">1</span>,<span class="num">0</span>],[<span class="num">1</span>,<span class="num">1</span>],[<span class="num">0</span>,<span class="num">1</span>]],
+        <span class="str">"edges_vertices"</span>: [[<span class="num">0</span>,<span class="num">1</span>],[<span class="num">1</span>,<span class="num">2</span>],[<span class="num">2</span>,<span class="num">3</span>],[<span class="num">3</span>,<span class="num">0</span>],[<span class="num">0</span>,<span class="num">2</span>]],
+        <span class="str">"edges_assignment"</span>: [<span class="str">"B"</span>,<span class="str">"B"</span>,<span class="str">"B"</span>,<span class="str">"B"</span>,<span class="str">"V"</span>],
+        <span class="str">"edges_foldAngle"</span>: [<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">180</span>]
+    }))
+    <span class="fn">print</span>(result.observation.shape_similarity)  <span class="cmt"># 1.0</span></pre>
+      </div>
+
+      <div class="code-block" style="margin-top:16px">
+        <div class="code-header"><span>python &mdash; all tasks</span><button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+        <pre><span class="kw">import</span> requests
+
+<span class="cmt"># Fetch available tasks</span>
+tasks = requests.<span class="fn">get</span>(<span class="str">"http://localhost:8000/tasks"</span>).<span class="fn">json</span>()
+
+<span class="kw">for</span> name, info <span class="kw">in</span> tasks.<span class="fn">items</span>():
+    <span class="fn">print</span>(<span class="str">f"</span>{name}<span class="str">: difficulty </span>{info[<span class="str">'difficulty'</span>]}<span class="str">"</span>)
+
+    <span class="cmt"># Get target crease pattern for this task</span>
+    detail = requests.<span class="fn">get</span>(<span class="str">f"http://localhost:8000/tasks/</span>{name}<span class="str">"</span>).<span class="fn">json</span>()
+    target = detail[<span class="str">"target_fold"</span>]
+
+    <span class="cmt"># Create session, reset, step</span>
+    s = requests.<span class="fn">post</span>(<span class="str">"http://localhost:8000/sessions"</span>).<span class="fn">json</span>()
+    sid = s[<span class="str">"session_id"</span>]
+    requests.<span class="fn">post</span>(<span class="str">f"http://localhost:8000/sessions/</span>{sid}<span class="str">/reset"</span>, json={<span class="str">"task_name"</span>: name})
+    obs = requests.<span class="fn">post</span>(<span class="str">f"http://localhost:8000/sessions/</span>{sid}<span class="str">/step"</span>, json={<span class="str">"fold_data"</span>: target}).<span class="fn">json</span>()
+    <span class="fn">print</span>(<span class="str">f"  reward: </span>{obs[<span class="str">'reward'</span>]}<span class="str">, similarity: </span>{obs[<span class="str">'shape_similarity'</span>]}<span class="str">"</span>)</pre>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<!-- DETAIL VIEW -->
-<div id="detail-view">
+<!-- ═══════════════════════════════════════════════════════════
+     VIEW 2 — GRID
+     ═══════════════════════════════════════════════════════════ -->
+<div id="grid-view" class="view">
+  <div class="grid-content">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     VIEW 3 — DETAIL
+     ═══════════════════════════════════════════════════════════ -->
+<div id="detail-view" class="view">
   <div class="detail-header">
-    <button class="back-btn" id="back-btn">← Back</button>
+    <button class="back-btn" id="back-btn">&larr; Back</button>
     <div class="detail-title" id="detail-title"></div>
     <div class="detail-subtitle" id="detail-subtitle"></div>
   </div>
@@ -423,26 +1062,41 @@ input[type="range"]::-webkit-slider-thumb:hover {
   <div class="metrics-bar">
     <div class="metric">
       <div class="metric-label">Similarity</div>
-      <div class="metric-value high" id="m-sim">—</div>
+      <div class="metric-value high" id="m-sim">&mdash;</div>
     </div>
     <div class="metric">
       <div class="metric-label">Folds</div>
-      <div class="metric-value" id="m-folds">—</div>
+      <div class="metric-value" id="m-folds">&mdash;</div>
     </div>
     <div class="metric">
       <div class="metric-label">Strain</div>
-      <div class="metric-value" id="m-strain">—</div>
+      <div class="metric-value" id="m-strain">&mdash;</div>
     </div>
     <div class="metric">
       <div class="metric-label">Vertices</div>
-      <div class="metric-value" id="m-verts">—</div>
+      <div class="metric-value" id="m-verts">&mdash;</div>
     </div>
     <div class="metric">
       <div class="metric-label">Status</div>
-      <div class="metric-value" id="m-status">—</div>
+      <div class="metric-value" id="m-status">&mdash;</div>
     </div>
   </div>
 </div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    }, 2000);
+  });
+}
+</script>
 
 <script type="importmap">
 {
@@ -457,7 +1111,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// ─── FOLD DATA (hardcoded demo) ───────────────────────────────
+// ─── FOLD DATA ─────────────────────────────────────────────
 const TASKS = {
   triangle: {
     name: 'Triangle',
@@ -562,10 +1216,8 @@ function analyticalFold(fold, creasePercent) {
   }
 
   // Per-face cumulative transform: folded = R * flat + t
-  // R is a 3x3 matrix stored as [r00,r01,r02, r10,r11,r12, r20,r21,r22]
   const faceR = new Array(faces.length).fill(null);
   const faceT = new Array(faces.length).fill(null);
-  // Face 0: identity
   faceR[0] = [1,0,0, 0,1,0, 0,0,1];
   faceT[0] = [0,0,0];
 
@@ -592,7 +1244,6 @@ function analyticalFold(fold, creasePercent) {
         let Rfj, tfj;
 
         if (Math.abs(angle) > 1e-10) {
-          // Fold rotation around edge (v1->v2) in folded coords
           const p1 = [pos[v1*3], pos[v1*3+1], pos[v1*3+2]];
           const ax = [pos[v2*3]-p1[0], pos[v2*3+1]-p1[1], pos[v2*3+2]-p1[2]];
           const axLen = Math.sqrt(ax[0]*ax[0]+ax[1]*ax[1]+ax[2]*ax[2]);
@@ -603,7 +1254,6 @@ function analyticalFold(fold, creasePercent) {
             const u = [ax[0]/axLen, ax[1]/axLen, ax[2]/axLen];
             const foldR = rodriguesMat(u, angle);
             Rfj = matMul(foldR, faceR[fi]);
-            // t_fj = foldR * (t_fi - p1) + p1
             const dt = [faceT[fi][0]-p1[0], faceT[fi][1]-p1[1], faceT[fi][2]-p1[2]];
             const rdt = matVec(foldR, dt);
             tfj = [rdt[0]+p1[0], rdt[1]+p1[1], rdt[2]+p1[2]];
@@ -616,7 +1266,6 @@ function analyticalFold(fold, creasePercent) {
         faceR[fj] = Rfj;
         faceT[fj] = tfj;
 
-        // Place unplaced vertices
         for (const vi of faces[fj]) {
           if (!placed.has(vi)) {
             const fv = [flat[vi*3], flat[vi*3+1], flat[vi*3+2]];
@@ -634,7 +1283,6 @@ function analyticalFold(fold, creasePercent) {
   return pos;
 }
 
-// 3x3 rotation matrix from axis-angle (Rodrigues)
 function rodriguesMat(u, angle) {
   const c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
   return [
@@ -644,7 +1292,6 @@ function rodriguesMat(u, angle) {
   ];
 }
 
-// 3x3 matrix multiply (row-major flat arrays)
 function matMul(a, b) {
   return [
     a[0]*b[0]+a[1]*b[3]+a[2]*b[6], a[0]*b[1]+a[1]*b[4]+a[2]*b[7], a[0]*b[2]+a[1]*b[5]+a[2]*b[8],
@@ -653,7 +1300,6 @@ function matMul(a, b) {
   ];
 }
 
-// 3x3 matrix * vec3
 function matVec(m, v) {
   return [
     m[0]*v[0]+m[1]*v[1]+m[2]*v[2],
@@ -668,13 +1314,9 @@ const EDGE_COLORS = { M: 0xc0392b, V: 0x2471a3, B: 0x1a1816, F: 0xddd8d0, U: 0xa
 
 function buildMesh(task, creasePercent = 1) {
   const fold = task.fold;
-  const n = fold.vertices_coords.length;
   const group = new THREE.Group();
-
-  // Compute folded positions analytically
   const positions = analyticalFold(fold, creasePercent);
 
-  // Faces
   const faces = fold.faces_vertices;
   const indices = [];
   for (const face of faces) {
@@ -698,7 +1340,6 @@ function buildMesh(task, creasePercent = 1) {
   const mesh = new THREE.Mesh(geo, mat);
   group.add(mesh);
 
-  // Edges
   for (let i = 0; i < fold.edges_vertices.length; i++) {
     const [v1, v2] = fold.edges_vertices[i];
     const assignment = fold.edges_assignment[i];
@@ -716,7 +1357,6 @@ function buildMesh(task, creasePercent = 1) {
     group.add(new THREE.LineSegments(lineGeo, lineMat));
   }
 
-  // Center
   const box = new THREE.Box3().setFromObject(group);
   const center = box.getCenter(new THREE.Vector3());
   group.position.sub(center);
@@ -739,7 +1379,6 @@ function setupScene(container, opts = {}) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   container.appendChild(renderer.domElement);
 
-  // Lights
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
   const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
@@ -764,48 +1403,90 @@ function setupScene(container, opts = {}) {
   return { scene, camera, renderer, controls };
 }
 
-// ─── GRID VIEW ────────────────────────────────────────────────
+// ─── VIEW NAVIGATION ──────────────────────────────────────────
 
-const gridEl = document.getElementById('grid');
+let gridInitialized = false;
 const cardScenes = [];
 
-for (const [key, task] of Object.entries(TASKS)) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `
-    <div class="card-canvas" id="card-${key}"></div>
-    <div class="card-info">
-      <div class="card-name">${task.name}</div>
-      <div class="card-desc">${task.description} · difficulty ${task.difficulty}</div>
-      <div class="card-score">
-        <div class="score-bar-bg"><div class="score-bar-fill" style="width:${task.similarity * 100}%"></div></div>
-        <div class="score-label">${Math.round(task.similarity * 100)}%</div>
-      </div>
-    </div>
-  `;
-  card.addEventListener('click', () => showDetail(key));
-  gridEl.appendChild(card);
+function showView(name) {
+  // Hide all views
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+  // Update header
+  const headerTitle = document.getElementById('header-title');
+  const headerTag = document.getElementById('header-tag');
+  const headerNav = document.getElementById('header-nav');
+
+  if (name === 'landing') {
+    document.getElementById('landing-view').classList.add('active');
+    headerTitle.textContent = 'Origami RL';
+    headerTag.textContent = 'environment';
+    headerTag.style.display = '';
+    headerNav.textContent = 'Origamis \u2192';
+    headerNav.onclick = () => showView('grid');
+    headerNav.style.display = '';
+    document.getElementById('main-header').style.display = '';
+  } else if (name === 'grid') {
+    document.getElementById('grid-view').classList.add('active');
+    headerTitle.textContent = 'Origamis';
+    headerTag.style.display = 'none';
+    headerNav.textContent = '\u2190 Back';
+    headerNav.onclick = () => showView('landing');
+    headerNav.style.display = '';
+    document.getElementById('main-header').style.display = '';
+    if (!gridInitialized) initGrid();
+  } else if (name === 'detail') {
+    document.getElementById('detail-view').classList.add('active');
+    document.getElementById('main-header').style.display = 'none';
+  }
 }
 
-// Init mini 3D scenes after DOM paint
-requestAnimationFrame(() => {
-  for (const [key, task] of Object.entries(TASKS)) {
-    const container = document.getElementById(`card-${key}`);
-    if (!container) continue;
-    const { scene, camera, renderer } = setupScene(container, { autoRotate: true });
-    const mesh = buildMesh(task, 1.0);
-    scene.add(mesh);
+// Expose globally for inline onclick
+window.showView = showView;
 
-    // Slow auto-rotate
-    const animate = () => {
-      requestAnimationFrame(animate);
-      mesh.rotation.y += 0.005;
-      renderer.render(scene, camera);
-    };
-    animate();
-    cardScenes.push({ key, scene, camera, renderer, mesh });
+// ─── GRID VIEW ────────────────────────────────────────────────
+
+function initGrid() {
+  gridInitialized = true;
+  const gridEl = document.getElementById('grid');
+
+  for (const [key, task] of Object.entries(TASKS)) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-canvas" id="card-${key}"></div>
+      <div class="card-info">
+        <div class="card-name">${task.name}</div>
+        <div class="card-desc">${task.description} \u00b7 difficulty ${task.difficulty}</div>
+        <div class="card-score">
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${task.similarity * 100}%"></div></div>
+          <div class="score-label">${Math.round(task.similarity * 100)}%</div>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => showDetail(key));
+    gridEl.appendChild(card);
   }
-});
+
+  // Init mini 3D scenes after DOM paint
+  requestAnimationFrame(() => {
+    for (const [key, task] of Object.entries(TASKS)) {
+      const container = document.getElementById(`card-${key}`);
+      if (!container) continue;
+      const { scene, camera, renderer } = setupScene(container, { autoRotate: true });
+      const mesh = buildMesh(task, 1.0);
+      scene.add(mesh);
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        mesh.rotation.y += 0.005;
+        renderer.render(scene, camera);
+      };
+      animate();
+      cardScenes.push({ key, scene, camera, renderer, mesh });
+    }
+  });
+}
 
 // ─── DETAIL VIEW ──────────────────────────────────────────────
 
@@ -821,8 +1502,7 @@ function showDetail(key) {
   currentTaskKey = key;
   const task = TASKS[key];
 
-  document.getElementById('grid-view').classList.add('hidden');
-  document.getElementById('detail-view').classList.add('active');
+  showView('detail');
 
   document.getElementById('detail-title').textContent = task.name;
   document.getElementById('detail-subtitle').textContent = task.description;
@@ -843,7 +1523,6 @@ function showDetail(key) {
 
   // 3D viewer
   const panel = document.getElementById('panel-3d');
-  // Clean up old
   if (detailRenderer) {
     panel.removeChild(detailRenderer.domElement);
     detailRenderer.dispose();
@@ -856,18 +1535,13 @@ function showDetail(key) {
   detailRenderer = setup.renderer;
   detailControls = setup.controls;
 
-  // Reset slider
   const slider = document.getElementById('crease-slider');
   slider.value = 100;
   document.getElementById('slider-val').textContent = '100%';
 
-  // Build mesh
   updateDetailMesh(1.0);
-
-  // Target ghost overlay
   addTargetGhost(task);
 
-  // Animate
   const animateDetail = () => {
     detailAnimId = requestAnimationFrame(animateDetail);
     detailControls.update();
@@ -875,7 +1549,6 @@ function showDetail(key) {
   };
   animateDetail();
 
-  // Resize
   const resizeObserver = new ResizeObserver(() => {
     const w = panel.clientWidth;
     const h = panel.clientHeight;
@@ -890,7 +1563,6 @@ function updateDetailMesh(cp) {
   if (!currentTaskKey) return;
   const task = TASKS[currentTaskKey];
 
-  // Remove old mesh group (keep ghost)
   if (detailMeshGroup) {
     detailScene.remove(detailMeshGroup);
   }
@@ -901,9 +1573,6 @@ function updateDetailMesh(cp) {
 
 function addTargetGhost(task) {
   const fold = task.fold;
-  const n = fold.vertices_coords.length;
-
-  // Wireframe ghost of fully folded state
   const positions = analyticalFold(fold, 1.0);
 
   const faces = fold.faces_vertices;
@@ -926,8 +1595,6 @@ function addTargetGhost(task) {
   });
 
   const ghost = new THREE.Mesh(geo, ghostMat);
-
-  // Center same as main mesh
   const box = new THREE.Box3().setFromBufferAttribute(geo.getAttribute('position'));
   const center = box.getCenter(new THREE.Vector3());
   ghost.position.sub(center);
@@ -940,7 +1607,6 @@ function draw2DCrease(task) {
   const fold = task.fold;
   const verts = fold.vertices_coords;
 
-  // Find bounds
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const v of verts) {
     minX = Math.min(minX, v[0]); minY = Math.min(minY, v[1]);
@@ -954,30 +1620,17 @@ function draw2DCrease(task) {
   const scale = size / Math.max(vw, vh);
 
   const toX = (x) => (x - minX + pad) * scale;
-  const toY = (y) => size - (y - minY + pad) * scale; // flip Y
+  const toY = (y) => size - (y - minY + pad) * scale;
 
   const STROKE = { M: '#c0392b', V: '#2471a3', B: '#1a1816', F: '#ddd8d0', U: '#a9a49d' };
 
   let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
 
-  // Background paper
-  const paperPts = [];
-  // Find boundary edges and form polygon
-  const bVerts = new Set();
-  for (let i = 0; i < fold.edges_vertices.length; i++) {
-    if (fold.edges_assignment[i] === 'B') {
-      bVerts.add(fold.edges_vertices[i][0]);
-      bVerts.add(fold.edges_vertices[i][1]);
-    }
-  }
-
-  // Draw faces as background
   for (const face of fold.faces_vertices) {
     const pts = face.map(vi => `${toX(verts[vi][0])},${toY(verts[vi][1])}`).join(' ');
     svg += `<polygon points="${pts}" fill="#ffffff" stroke="none"/>`;
   }
 
-  // Draw edges
   for (let i = 0; i < fold.edges_vertices.length; i++) {
     const [v1, v2] = fold.edges_vertices[i];
     const a = fold.edges_assignment[i];
@@ -988,7 +1641,6 @@ function draw2DCrease(task) {
     svg += `<line x1="${toX(verts[v1][0])}" y1="${toY(verts[v1][1])}" x2="${toX(verts[v2][0])}" y2="${toY(verts[v2][1])}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" ${dash}/>`;
   }
 
-  // Draw vertices
   for (let i = 0; i < verts.length; i++) {
     svg += `<circle cx="${toX(verts[i][0])}" cy="${toY(verts[i][1])}" r="3" fill="var(--text)" opacity="0.3"/>`;
   }
@@ -998,10 +1650,7 @@ function draw2DCrease(task) {
 }
 
 function showGrid() {
-  document.getElementById('grid-view').classList.remove('hidden');
-  document.getElementById('detail-view').classList.remove('active');
-  if (detailAnimId) cancelAnimationFrame(detailAnimId);
-  currentTaskKey = null;
+  showView('grid');
 }
 
 // ─── SLIDER ───────────────────────────────────────────────────
@@ -1014,10 +1663,18 @@ document.getElementById('crease-slider').addEventListener('input', (e) => {
 
 // ─── BACK BUTTON & KEYBOARD ───────────────────────────────────
 
-document.getElementById('back-btn').addEventListener('click', () => showGrid());
+document.getElementById('back-btn').addEventListener('click', () => showView('grid'));
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && currentTaskKey) showGrid();
+  if (e.key === 'Escape') {
+    if (currentTaskKey) {
+      showView('grid');
+      currentTaskKey = null;
+      if (detailAnimId) cancelAnimationFrame(detailAnimId);
+    } else if (document.getElementById('grid-view').classList.contains('active')) {
+      showView('landing');
+    }
+  }
 });
 
 // ─── WEBSOCKET (optional live connection) ─────────────────────
@@ -1041,6 +1698,10 @@ function connectWS() {
 }
 
 connectWS();
+
+// ─── START ────────────────────────────────────────────────────
+
+showView('landing');
 </script>
 
 </body>
