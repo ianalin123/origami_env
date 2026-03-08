@@ -29,27 +29,39 @@ that, when folded, produces the target shape described below.
 Target: {description}
 Paper size: {width} x {height}
 
+VALID ANCHOR POINTS (place fold endpoints only at these coordinates):
+  Corners:   (0,0)  ({width},0)  ({width},{height})  (0,{height})
+  Midpoints: (0,{hy})  ({hx},0)  ({width},{hy})  ({hx},{height})
+  New anchor points are created wherever two creases intersect.
+
 Output a JSON object with these exact fields:
-- vertices_coords: [[x, y], ...] — 2D positions on the flat paper (0 to {width} for x, 0 to {height} for y)
+- vertices_coords: [[x, y], ...] — 2D positions on the flat paper
 - edges_vertices: [[v1, v2], ...] — pairs of vertex indices forming edges
 - edges_assignment: ["B"|"M"|"V", ...] — B=boundary, M=mountain fold, V=valley fold
-- edges_foldAngle: [angle, ...] — fold angles in degrees (M: negative like -180, V: positive like 180, B: 0)
+- edges_foldAngle: [angle, ...] — fold angles in degrees (M: -180, V: 180, B: 0)
 
-Rules:
+Flat-foldability rules (must hold at every interior vertex):
+- Kawasaki: alternating sector angles each sum to 180 degrees
+- Maekawa: |mountain_count - valley_count| = 2
+- Big-Little-Big: the smallest sector must be bounded by one M and one V fold
+
+Structural rules:
 - Boundary edges (B) must outline the paper rectangle
 - At least one fold crease (M or V) must exist
-- Mountain fold angles are negative (-180 to 0)
-- Valley fold angles are positive (0 to 180)
-- All vertex indices in edges must be valid (0 to N-1)
+- All vertex indices must be valid (0 to N-1)
 
 Output ONLY the JSON object wrapped in ```json ... ``` markers."""
 
 
 def build_prompt(task: dict) -> str:
+    w = task["paper"]["width"]
+    h = task["paper"]["height"]
     return PROMPT_TEMPLATE.format(
         description=task["description"],
-        width=task["paper"]["width"],
-        height=task["paper"]["height"],
+        width=w,
+        height=h,
+        hx=round(w / 2, 4),
+        hy=round(h / 2, 4),
     )
 
 
@@ -101,7 +113,7 @@ def main():
     # --- Configure reward functions (OpenEnv pattern) ---
     from client import OrigamiEnv
     from origami_server.models import OrigamiAction
-    from training.reward import extract_fold_json, valid_fold
+    from training.reward import extract_fold_json, flat_foldable_reward, valid_fold
     from unsloth import is_port_open, launch_openenv
 
     global port, openenv_process
@@ -241,7 +253,7 @@ def main():
     trainer = GRPOTrainer(
         model=model,
         processing_class=tokenizer,
-        reward_funcs=[valid_fold, shape_match_reward],
+        reward_funcs=[valid_fold, flat_foldable_reward, shape_match_reward],
         args=training_args,
         train_dataset=dataset,
     )
