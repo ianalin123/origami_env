@@ -52,6 +52,43 @@ Structural rules:
 
 Output ONLY the JSON object wrapped in ```json ... ``` markers."""
 
+STEP_PROMPT_TEMPLATE = """You are an origami designer. Add the next fold crease.
+
+Target: {description}
+Paper: {width} x {height} unit square
+
+CURRENT STATE (step {step} of {max_folds}):
+  Creases placed: {crease_history}
+
+AVAILABLE ANCHOR POINTS:
+  Corners:      (0,0)  ({width},0)  ({width},{height})  (0,{height})
+  Midpoints:    (0,{hy})  ({hx},0)  ({width},{hy})  ({hx},{height})
+  Intersections: {intersections}
+
+Flat-foldability rules at every interior vertex:
+  - Kawasaki: alternating sector angles each sum to 180 degrees
+  - Maekawa: |mountain_count - valley_count| = 2
+  - BLB: smallest sector bounded by opposite M/V types
+
+Output ONLY this JSON (no explanation):
+{{"from": [x1, y1], "to": [x2, y2], "assignment": "M" or "V"}}"""
+
+
+def build_step_prompt(task: dict, step: int = 0, crease_history: str = "none", intersections: str = "none") -> str:
+    w = task["paper"]["width"]
+    h = task["paper"]["height"]
+    return STEP_PROMPT_TEMPLATE.format(
+        description=task["description"],
+        width=w,
+        height=h,
+        hx=round(w / 2, 4),
+        hy=round(h / 2, 4),
+        step=step,
+        max_folds=task.get("max_folds", 1),
+        crease_history=crease_history,
+        intersections=intersections,
+    )
+
 
 def build_prompt(task: dict) -> str:
     w = task["paper"]["width"]
@@ -71,7 +108,7 @@ def main():
         "--task", default="all",
         help="Comma-separated task names, or 'all' for all tasks",
     )
-    parser.add_argument("--max_steps", type=int, default=600)
+    parser.add_argument("--max_steps", type=int, default=1200)
     parser.add_argument("--num_generations", type=int, default=2)
     parser.add_argument("--model", default="unsloth/Qwen2.5-3B-Instruct")
     parser.add_argument("--lr", type=float, default=2e-4)
@@ -103,7 +140,7 @@ def main():
         raise SystemExit(1)
 
     # --- Get task info from server ---
-    ALL_TASKS = ["triangle", "half_fold", "quarter_fold", "letter_fold"]
+    ALL_TASKS = ["triangle", "half_fold", "quarter_fold", "letter_fold", "waterbomb_base", "map_fold"]
     task_names = ALL_TASKS if args.task == "all" else [t.strip() for t in args.task.split(",")]
     tasks = {}
     for name in task_names:
@@ -113,7 +150,7 @@ def main():
     # --- Configure reward functions (OpenEnv pattern) ---
     from client import OrigamiEnv
     from origami_server.models import OrigamiAction
-    from training.reward import extract_fold_json, flat_foldable_reward, valid_fold
+    from training.reward import extract_fold_json, extract_crease_json, flat_foldable_reward, valid_fold, valid_crease
     from unsloth import is_port_open, launch_openenv
 
     global port, openenv_process
@@ -150,6 +187,26 @@ def main():
                 scores.append(-2.0)
         return scores
 
+    def per_step_reward(completions, task_name, **kwargs):
+        global port, openenv_process
+        scores = []
+        for completion, tname in zip(completions, task_name):
+            response = completion[0]["content"]
+            crease = extract_crease_json(response)
+            if crease is None:
+                scores.append(-2.0)
+                continue
+            try:
+                port, openenv_process = launch_openenv(port, openenv_process)
+                openenv_process.reset(task_name=tname)
+                result = openenv_process.step(OrigamiAction(crease=crease))
+                scores.append(result.reward if result.reward is not None else 0.0)
+            except TimeoutError:
+                scores.append(-1.0)
+            except Exception:
+                scores.append(-2.0)
+        return scores
+
     # --- Build dataset (same prompt repeated, like 2048) ---
     from datasets import Dataset
 
@@ -158,7 +215,7 @@ def main():
     samples_per_task = 200
     rows = []
     for tname, tinfo in tasks.items():
-        prompt_text = build_prompt(tinfo)
+        prompt_text = build_step_prompt(tinfo)
         rows.extend([{
             "prompt": [
                 {"role": "system", "content": "/no_think"},
@@ -244,7 +301,7 @@ def main():
         gradient_accumulation_steps=1,
         num_generations=args.num_generations,
         max_prompt_length=512,
-        max_completion_length=max_seq_length - 512,
+        max_completion_length=128,
         max_steps=args.max_steps,
         save_steps=10,
         output_dir=os.environ.get("OUTPUT_DIR", "outputs"),
@@ -253,7 +310,7 @@ def main():
     trainer = GRPOTrainer(
         model=model,
         processing_class=tokenizer,
-        reward_funcs=[valid_fold, flat_foldable_reward, shape_match_reward],
+        reward_funcs=[valid_crease, per_step_reward],
         args=training_args,
         train_dataset=dataset,
     )
