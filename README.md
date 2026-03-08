@@ -1,3 +1,12 @@
+---
+title: Origami Env
+emoji: 🦢
+colorFrom: purple
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # Origami Env
 
 RL environment for origami folding — LLM generates FOLD crease patterns, physics simulates them, reward = shape similarity to target.
