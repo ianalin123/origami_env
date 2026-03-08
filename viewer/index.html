@@ -569,6 +569,8 @@ header h1 {
   min-height: 0;
 }
 
+/* V2 3-col — replaces detail-body for episode player */
+
 .panel-2d {
   border-right: 1px solid var(--border);
   background: var(--surface);
@@ -836,6 +838,310 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .try-json textarea:focus { border-color: var(--border-hover); }
 
+/* ── Max folds badge ──────────────────────────────────────── */
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.max-folds-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.score-row { display: flex; align-items: center; gap: 10px; }
+
+/* ── Detail V2: 3-column layout ──────────────────────────── */
+.detail-columns {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  min-height: 0;
+}
+
+.panel-reward {
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Reward breakdown bars */
+.reward-bars {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.reward-bar-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+  font-size: 11px;
+}
+.reward-bar-row:last-child { margin-bottom: 0; }
+
+.reward-bar-label {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.reward-bar-track {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.reward-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  background: var(--text-tertiary);
+}
+.reward-bar-fill.high { background: var(--success); }
+.reward-bar-fill.mid  { background: #e67e22; }
+.reward-bar-fill.low  { background: var(--accent); }
+
+.reward-bar-val {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.reward-totals {
+  border-top: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.reward-totals span { font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); }
+.reward-totals strong { color: var(--text); }
+
+/* Step feed */
+.step-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.step-feed-empty {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 300;
+}
+
+.step-feed-item {
+  padding: 8px 16px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 52px 1fr 48px;
+  align-items: center;
+  gap: 4px;
+}
+.step-feed-item:last-child { border-bottom: none; }
+
+.step-feed-num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+.step-feed-desc {
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step-feed-reward {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-align: right;
+}
+.step-feed-reward.pos { color: var(--success); }
+.step-feed-reward.neg { color: var(--accent); }
+
+/* ── Crease input strip ───────────────────────────────────── */
+.crease-strip {
+  padding: 10px 24px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.mode-pills {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mode-pill {
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 12px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: all 0.15s;
+}
+.mode-pill:last-child { border-right: none; }
+.mode-pill.active { background: var(--text); color: var(--surface); }
+
+.crease-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.crease-input-label {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.crease-coord {
+  width: 56px;
+  height: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 0 6px;
+  outline: none;
+  text-align: center;
+}
+.crease-coord:focus { border-color: var(--border-hover); }
+
+.assign-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.assign-btn.active-M { background: var(--accent-soft); border-color: var(--mountain); color: var(--mountain); }
+.assign-btn.active-V { background: #eaf2f8; border-color: var(--valley); color: var(--valley); }
+
+.crease-strip-json {
+  display: none;
+  flex: 1;
+}
+.crease-strip-json textarea {
+  width: 100%;
+  height: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 4px 8px;
+  outline: none;
+  resize: none;
+}
+
+.episode-start-btn {
+  font-size: 12px;
+  font-family: inherit;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none;
+  background: var(--text);
+  color: var(--surface);
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.episode-start-btn:hover { opacity: 0.8; }
+.episode-start-btn.started { background: var(--border); color: var(--text-secondary); cursor: default; }
+
+.detail-step-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+/* Episode complete overlay */
+.episode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,22,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.overlay-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 48px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.overlay-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 24px;
+}
+
+.overlay-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--success);
+}
+
+.overlay-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 680px) {
   header { padding: 20px 24px; }
@@ -871,146 +1177,99 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
     <!-- Hero -->
     <div class="hero section">
-      <p>OpenEnv RL environment for origami folding. Submit FOLD crease patterns, get physics simulation + shape similarity reward.</p>
-      <p style="margin-top:12px;font-size:14px;color:var(--text-tertiary);font-weight:300">Rewards inspired by AlphaFold &mdash; chamfer distance shape matching with rotational alignment across 24 orientations.</p>
+      <p>OpenEnv RL environment for origami folding. Add one crease at a time, get per-step geometry rewards, build up to the target shape.</p>
+      <p style="margin-top:12px;font-size:14px;color:var(--text-tertiary);font-weight:300">Multi-step episodes: each crease is scored immediately for progress, flat-foldability (Kawasaki, Maekawa, BLB), and economy. Complete within max_folds to unlock a 10&times; bonus.</p>
     </div>
 
     <!-- How It Works -->
     <div class="section">
       <h2>How It Works</h2>
-      <div class="steps">
+      <div class="steps" style="grid-template-columns: repeat(4, 1fr)">
         <div class="step">
           <div class="step-num">1</div>
           <div class="step-title">Reset</div>
-          <div class="step-desc">Pick a task &rarr; get target shape and flat paper starting state</div>
+          <div class="step-desc">Pick a task &rarr; get empty paper + anchor points</div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
-          <div class="step-title">Step</div>
-          <div class="step-desc">Submit a FOLD JSON crease pattern describing your fold</div>
+          <div class="step-title">Add Crease</div>
+          <div class="step-desc">Submit <code>{"from":[x,y], "to":[x,y], "assignment":"M"|"V"}</code></div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
-          <div class="step-title">Reward</div>
-          <div class="step-desc">shape_similarity &times; 20.0 &mdash; score from 0 to 20</div>
+          <div class="step-title">Per-step Reward</div>
+          <div class="step-desc">Progress + geometry theorems scored after every crease</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-title">Complete</div>
+          <div class="step-desc">Finish within max_folds to unlock 10&times; completion bonus</div>
         </div>
       </div>
     </div>
 
-    <!-- FOLD Format -->
+    <!-- Action -->
     <div class="section">
-      <h2>FOLD Format</h2>
+      <h2>Action</h2>
       <div class="schema-card">
         <div class="schema-row">
-          <span class="schema-field">vertices_coords</span>
-          <span class="schema-type">[[x,y], ...]</span>
-          <span class="schema-desc">Vertex positions<span class="schema-tag required">required</span></span>
+          <span class="schema-field">from</span>
+          <span class="schema-type">[x, y]</span>
+          <span class="schema-desc">Start point &mdash; must be a listed anchor point<span class="schema-tag required">required</span></span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">edges_vertices</span>
-          <span class="schema-type">[[v1,v2], ...]</span>
-          <span class="schema-desc">Edge connectivity<span class="schema-tag required">required</span></span>
+          <span class="schema-field">to</span>
+          <span class="schema-type">[x, y]</span>
+          <span class="schema-desc">End point &mdash; must be a listed anchor point<span class="schema-tag required">required</span></span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">edges_assignment</span>
-          <span class="schema-type">["B"|"M"|"V"|"F"|"U"]</span>
-          <span class="schema-desc">Edge types. Need &ge;1 M or V, &ge;1 B<span class="schema-tag required">required</span></span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">edges_foldAngle</span>
-          <span class="schema-type">[degrees, ...]</span>
-          <span class="schema-desc">Fold angles. Defaults: V&rarr;180&deg;, M&rarr;&minus;180&deg;<span class="schema-tag optional">optional</span></span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">faces_vertices</span>
-          <span class="schema-type">[[v0,v1,...], ...]</span>
-          <span class="schema-desc">Face polygons. Auto-computed if missing<span class="schema-tag optional">optional</span></span>
+          <span class="schema-field">assignment</span>
+          <span class="schema-type">"M" | "V"</span>
+          <span class="schema-desc">Mountain or valley fold<span class="schema-tag required">required</span></span>
         </div>
       </div>
     </div>
 
-    <!-- Observation -->
+    <!-- Per-step Reward Breakdown -->
     <div class="section">
-      <h2>Observation</h2>
+      <h2>Reward Breakdown</h2>
       <div class="schema-card">
         <div class="schema-row">
-          <span class="schema-field">shape_similarity</span>
-          <span class="schema-type">float 0.0&ndash;1.0</span>
-          <span class="schema-desc">Procrustes match to target shape</span>
+          <span class="schema-field">progress</span>
+          <span class="schema-type">0&ndash;1</span>
+          <span class="schema-desc">Fraction of target creases geometrically covered</span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">final_positions</span>
-          <span class="schema-type">[[x,y,z], ...]</span>
-          <span class="schema-desc">Folded vertex positions</span>
+          <span class="schema-field">delta</span>
+          <span class="schema-type">0&ndash;1</span>
+          <span class="schema-desc">Coverage improvement from this step alone</span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">target_positions</span>
-          <span class="schema-type">[[x,y,z], ...]</span>
-          <span class="schema-desc">Expected target positions</span>
+          <span class="schema-field">kawasaki</span>
+          <span class="schema-type">0&ndash;1</span>
+          <span class="schema-desc">Flat-foldability: alternating sector angles sum to 180&deg;</span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">max_strain</span>
-          <span class="schema-type">float</span>
-          <span class="schema-desc">Edge deformation metric</span>
+          <span class="schema-field">maekawa</span>
+          <span class="schema-type">0&ndash;1</span>
+          <span class="schema-desc">Flat-foldability: |M&minus;V| = 2 at interior vertices</span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">is_stable</span>
-          <span class="schema-type">bool</span>
-          <span class="schema-desc">Convergence flag</span>
+          <span class="schema-field">blb</span>
+          <span class="schema-type">0&ndash;1</span>
+          <span class="schema-desc">Big-Little-Big lemma compliance</span>
         </div>
         <div class="schema-row">
-          <span class="schema-field">reward</span>
-          <span class="schema-type">float</span>
-          <span class="schema-desc">similarity &times; 20.0, or &minus;2.0 on error</span>
+          <span class="schema-field">economy</span>
+          <span class="schema-type">0&ndash;1</span>
+          <span class="schema-desc">Penalty for excess creases</span>
+        </div>
+        <div class="schema-row">
+          <span class="schema-field">completion</span>
+          <span class="schema-type">0 | 10</span>
+          <span class="schema-desc">Bonus when progress &gt; 0.9 and geometry valid</span>
         </div>
       </div>
-    </div>
-
-
-    <!-- Rewards -->
-    <div class="section">
-      <h2>Rewards</h2>
-      <p style="font-size:14px;color:var(--text-secondary);font-weight:300;line-height:1.6;margin-bottom:20px">
-        The environment computes reward from the physics simulation result. Two reward functions are available for training:
-      </p>
-      <div class="schema-card">
-        <div class="schema-row">
-          <span class="schema-field">valid_fold</span>
-          <span class="schema-type">format reward</span>
-          <span class="schema-desc">+1.0 valid FOLD JSON, &minus;0.5 parseable but invalid structure, &minus;2.0 not parseable</span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">shape_match</span>
-          <span class="schema-type">main reward</span>
-          <span class="schema-desc">similarity &times; 20.0 (0&ndash;20). &minus;1.0 if simulation fails, &minus;2.0 if invalid</span>
-        </div>
-      </div>
-      <h3 style="margin-top:24px">How shape_similarity is computed</h3>
-      <div class="schema-card">
-        <div class="schema-row">
-          <span class="schema-field">1. Simulate</span>
-          <span class="schema-desc">Run physics engine on submitted crease pattern &rarr; get final 3D vertex positions</span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">2. Center</span>
-          <span class="schema-desc">Center both predicted and target point clouds at origin</span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">3. Align</span>
-          <span class="schema-desc">Try 24 rotation alignments (90&deg; rotations + mirrors) to handle equivalent orientations</span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">4. Chamfer</span>
-          <span class="schema-desc">Bidirectional nearest-neighbor distance, normalized by bounding box diagonal</span>
-        </div>
-        <div class="schema-row">
-          <span class="schema-field">5. Score</span>
-          <span class="schema-desc">similarity = 1 &minus; (chamfer / diagonal), clamped to [0, 1]. Reward = similarity &times; 20</span>
-        </div>
-      </div>
-      <p style="font-size:13px;color:var(--text-tertiary);font-weight:300;line-height:1.5;margin-top:12px">
-        <code>max_strain</code> measures edge length deviation after folding (0 = no deformation). <code>is_stable</code> indicates whether the simulation converged.
-      </p>
     </div>
 
     <!-- API Reference -->
@@ -1065,41 +1324,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
     <div class="section">
       <h2>Quick Start</h2>
       <div class="code-block">
-        <div class="code-header"><span>python</span><button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
-        <pre><span class="kw">from</span> origami_env.client <span class="kw">import</span> OrigamiEnv
-<span class="kw">from</span> origami_env.models <span class="kw">import</span> OrigamiAction
-
-<span class="kw">with</span> <span class="fn">OrigamiEnv</span>(base_url=<span class="str">"http://localhost:8000"</span>) <span class="kw">as</span> env:
-    env.<span class="fn">reset</span>(task_name=<span class="str">"triangle"</span>)
-    result = env.<span class="fn">step</span>(<span class="fn">OrigamiAction</span>(fold_data={
-        <span class="str">"vertices_coords"</span>: [[<span class="num">0</span>,<span class="num">0</span>],[<span class="num">1</span>,<span class="num">0</span>],[<span class="num">1</span>,<span class="num">1</span>],[<span class="num">0</span>,<span class="num">1</span>]],
-        <span class="str">"edges_vertices"</span>: [[<span class="num">0</span>,<span class="num">1</span>],[<span class="num">1</span>,<span class="num">2</span>],[<span class="num">2</span>,<span class="num">3</span>],[<span class="num">3</span>,<span class="num">0</span>],[<span class="num">0</span>,<span class="num">2</span>]],
-        <span class="str">"edges_assignment"</span>: [<span class="str">"B"</span>,<span class="str">"B"</span>,<span class="str">"B"</span>,<span class="str">"B"</span>,<span class="str">"V"</span>],
-        <span class="str">"edges_foldAngle"</span>: [<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">180</span>]
-    }))
-    <span class="fn">print</span>(result.observation.shape_similarity)  <span class="cmt"># 1.0</span></pre>
-      </div>
-
-      <div class="code-block" style="margin-top:16px">
-        <div class="code-header"><span>python &mdash; all tasks</span><button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
+        <div class="code-header"><span>python &mdash; multi-step episode</span><button class="copy-btn" onclick="copyCode(this)" title="Copy to clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></div>
         <pre><span class="kw">import</span> requests
 
-<span class="cmt"># Fetch available tasks</span>
-tasks = requests.<span class="fn">get</span>(<span class="str">"http://localhost:8000/tasks"</span>).<span class="fn">json</span>()
+SERVER = <span class="str">"http://localhost:8000"</span>
 
-<span class="kw">for</span> name, info <span class="kw">in</span> tasks.<span class="fn">items</span>():
-    <span class="fn">print</span>(<span class="str">f"</span>{name}<span class="str">: difficulty </span>{info[<span class="str">'difficulty'</span>]}<span class="str">"</span>)
+<span class="cmt"># Create session + reset</span>
+sid = requests.<span class="fn">post</span>(<span class="str">f"{SERVER}/sessions"</span>).<span class="fn">json</span>()[<span class="str">"session_id"</span>]
+obs = requests.<span class="fn">post</span>(<span class="str">f"{SERVER}/sessions/{sid}/reset"</span>,
+    json={<span class="str">"task_name"</span>: <span class="str">"triangle"</span>}).<span class="fn">json</span>()[<span class="str">"observation"</span>]
+<span class="fn">print</span>(<span class="str">"anchor points:"</span>, obs[<span class="str">"anchor_points"</span>])
 
-    <span class="cmt"># Get target crease pattern for this task</span>
-    detail = requests.<span class="fn">get</span>(<span class="str">f"http://localhost:8000/tasks/</span>{name}<span class="str">"</span>).<span class="fn">json</span>()
-    target = detail[<span class="str">"target_fold"</span>]
-
-    <span class="cmt"># Create session, reset, step</span>
-    s = requests.<span class="fn">post</span>(<span class="str">"http://localhost:8000/sessions"</span>).<span class="fn">json</span>()
-    sid = s[<span class="str">"session_id"</span>]
-    requests.<span class="fn">post</span>(<span class="str">f"http://localhost:8000/sessions/</span>{sid}<span class="str">/reset"</span>, json={<span class="str">"task_name"</span>: name})
-    obs = requests.<span class="fn">post</span>(<span class="str">f"http://localhost:8000/sessions/</span>{sid}<span class="str">/step"</span>, json={<span class="str">"fold_data"</span>: target}).<span class="fn">json</span>()
-    <span class="fn">print</span>(<span class="str">f"  reward: </span>{obs[<span class="str">'reward'</span>]}<span class="str">, similarity: </span>{obs[<span class="str">'shape_similarity'</span>]}<span class="str">"</span>)</pre>
+<span class="cmt"># Add creases one at a time</span>
+creases = [
+    {<span class="str">"from"</span>: [<span class="num">0</span>, <span class="num">0</span>], <span class="str">"to"</span>: [<span class="num">1</span>, <span class="num">1</span>], <span class="str">"assignment"</span>: <span class="str">"V"</span>},
+]
+<span class="kw">for</span> crease <span class="kw">in</span> creases:
+    result = requests.<span class="fn">post</span>(<span class="str">f"{SERVER}/sessions/{sid}/step"</span>,
+        json={<span class="str">"crease"</span>: crease}).<span class="fn">json</span>()[<span class="str">"observation"</span>]
+    <span class="fn">print</span>(<span class="str">f"step {result['step_count']}: reward={result['reward']:.3f}"</span>)
+    <span class="fn">print</span>(<span class="str">f"  breakdown: {result['reward_breakdown']}"</span>)
+    <span class="kw">if</span> result[<span class="str">"done"</span>]:
+        <span class="fn">print</span>(<span class="str">"Episode complete!"</span>)
+        <span class="kw">break</span></pre>
       </div>
     </div>
 
@@ -1122,11 +1369,13 @@ tasks = requests.<span class="fn">get</span>(<span class="str">"http://localhost
   <div class="detail-header">
     <button class="back-btn" id="back-btn">&larr; Back</button>
     <div class="detail-title" id="detail-title"></div>
-    <div class="detail-subtitle" id="detail-subtitle"></div>
+    <div class="detail-step-info" id="detail-step-info">step 0 / &mdash;</div>
+    <button class="episode-start-btn" id="start-episode-btn" onclick="startEpisode()">Start Episode</button>
+    <button class="try-preset" id="preset-play-btn" onclick="playPreset()" style="margin-left:4px">Preset &#9654;</button>
   </div>
-  <div class="detail-body">
+  <div class="detail-columns">
     <div class="panel-2d">
-      <div class="panel-label">Crease Pattern</div>
+      <div class="panel-label">2D Paper</div>
       <div class="crease-canvas" id="crease-2d"></div>
       <div class="legend">
         <div class="legend-item">
@@ -1141,49 +1390,49 @@ tasks = requests.<span class="fn">get</span>(<span class="str">"http://localhost
       </div>
     </div>
     <div class="panel-3d" id="panel-3d"></div>
-  </div>
-  <div class="slider-bar">
-    <div class="slider-label">flat</div>
-    <div class="slider-track">
-      <input type="range" id="crease-slider" min="0" max="100" value="100">
-    </div>
-    <div class="slider-value" id="slider-val">100%</div>
-    <div class="slider-label">folded</div>
-  </div>
-  <div class="metrics-bar">
-    <div class="metric">
-      <div class="metric-label">Similarity</div>
-      <div class="metric-value high" id="m-sim">&mdash;</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Folds</div>
-      <div class="metric-value" id="m-folds">&mdash;</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Strain</div>
-      <div class="metric-value" id="m-strain">&mdash;</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Vertices</div>
-      <div class="metric-value" id="m-verts">&mdash;</div>
-    </div>
-    <div class="metric">
-      <div class="metric-label">Status</div>
-      <div class="metric-value" id="m-status">&mdash;</div>
+    <div class="panel-reward">
+      <div class="panel-label" style="padding:16px 16px 8px">Reward</div>
+      <div class="reward-bars" id="reward-bars">
+        <div style="font-size:11px;color:var(--text-tertiary);font-weight:300;text-align:center;padding:8px 0">Start an episode to see reward breakdown</div>
+      </div>
+      <div class="reward-totals" id="reward-totals" style="display:none">
+        <span>step: <strong id="step-total">&mdash;</strong></span>
+        <span>cumulative: <strong id="cumulative-total">&mdash;</strong></span>
+      </div>
+      <div class="step-feed" id="step-feed">
+        <div class="step-feed-empty">No steps yet</div>
+      </div>
     </div>
   </div>
-
-  <!-- Try-it bar -->
-  <div class="try-bar">
-    <span class="try-label">Test a fold</span>
-    <button class="try-preset" id="preset-bad"   onclick="loadPreset('bad')">❌ Bad attempt</button>
-    <button class="try-preset" id="preset-good"  onclick="loadPreset('good')">✓ Trained model</button>
-    <button class="try-preset" id="preset-custom" onclick="toggleCustomJSON()">{ } Custom JSON</button>
-    <button class="try-submit" id="try-submit-btn" onclick="submitCurrentFold()">Submit → score</button>
-    <div class="reward-pill" id="reward-pill"></div>
+  <!-- Crease input strip -->
+  <div class="crease-strip" id="crease-strip">
+    <div class="mode-pills">
+      <button class="mode-pill active" id="mode-click" onclick="setInputMode('click')">Click</button>
+      <button class="mode-pill" id="mode-json" onclick="setInputMode('json')">JSON</button>
+    </div>
+    <div class="crease-inputs" id="crease-inputs-click">
+      <span class="crease-input-label">from</span>
+      <input class="crease-coord" id="crease-from-x" placeholder="x" type="number" step="0.5" min="0" max="1">
+      <input class="crease-coord" id="crease-from-y" placeholder="y" type="number" step="0.5" min="0" max="1">
+      <span class="crease-input-label" style="margin-left:6px">to</span>
+      <input class="crease-coord" id="crease-to-x" placeholder="x" type="number" step="0.5" min="0" max="1">
+      <input class="crease-coord" id="crease-to-y" placeholder="y" type="number" step="0.5" min="0" max="1">
+      <button class="assign-btn active-M" id="assign-M" onclick="setAssignment('M')">M</button>
+      <button class="assign-btn" id="assign-V" onclick="setAssignment('V')">V</button>
+    </div>
+    <div class="crease-strip-json" id="crease-inputs-json">
+      <textarea id="crease-json-input" spellcheck="false" placeholder='{"from":[x,y],"to":[x,y],"assignment":"M"}'></textarea>
+    </div>
+    <button class="try-submit" id="add-crease-btn" onclick="addCrease()" style="margin-left:auto">Add Crease &rarr;</button>
   </div>
-  <div class="try-json" id="try-json-panel">
-    <textarea id="fold-json-input" spellcheck="false" placeholder='Paste FOLD JSON here...'></textarea>
+  <!-- Episode complete overlay -->
+  <div class="episode-overlay" id="episode-overlay" style="display:none" onclick="this.style.display='none'">
+    <div class="overlay-card" onclick="event.stopPropagation()">
+      <div class="overlay-title">Episode Complete</div>
+      <div class="overlay-score" id="overlay-score">0.00</div>
+      <div class="overlay-detail" id="overlay-detail"></div>
+      <button class="episode-start-btn" onclick="resetEpisodeUI()">Play Again</button>
+    </div>
   </div>
 </div>
 
@@ -1221,6 +1470,7 @@ const TASKS = {
     name: 'Triangle',
     description: 'Diagonal valley fold',
     difficulty: 1,
+    max_folds: 1,
     similarity: 1.0,
     fold: {
       vertices_coords: [[0,0],[1,0],[1,1],[0,1]],
@@ -1235,6 +1485,7 @@ const TASKS = {
     name: 'Half Fold',
     description: 'Horizontal valley fold',
     difficulty: 1,
+    max_folds: 1,
     similarity: 1.0,
     fold: {
       vertices_coords: [[0,0],[1,0],[1,1],[0,1],[0,0.5],[1,0.5]],
@@ -1249,6 +1500,7 @@ const TASKS = {
     name: 'Quarter Fold',
     description: 'Two perpendicular folds',
     difficulty: 2,
+    max_folds: 2,
     similarity: 1.0,
     fold: {
       vertices_coords: [[0,0],[0.5,0],[1,0],[0,0.5],[0.5,0.5],[1,0.5],[0,1],[0.5,1],[1,1]],
@@ -1263,6 +1515,7 @@ const TASKS = {
     name: 'Letter Fold',
     description: 'Two parallel folds',
     difficulty: 2,
+    max_folds: 2,
     similarity: 1.0,
     fold: {
       vertices_coords: [[0,0],[1,0],[0,1/3],[1,1/3],[0,2/3],[1,2/3],[0,1],[1,1]],
@@ -1270,6 +1523,57 @@ const TASKS = {
       edges_assignment: ['B','B','B','B','B','B','B','B','V','M'],
       edges_foldAngle: [0,0,0,0,0,0,0,0,180,-180],
       faces_vertices: [[0,1,3,2],[2,3,5,4],[4,5,7,6]],
+    },
+    strain: 0.0,
+  },
+  waterbomb_base: {
+    name: 'Waterbomb Base',
+    description: 'Both diagonals + center lines',
+    difficulty: 3,
+    max_folds: 4,
+    similarity: 0.0,
+    fold: {
+      vertices_coords: [[0,0],[0.5,0],[1,0],[0,0.5],[0.5,0.5],[1,0.5],[0,1],[0.5,1],[1,1]],
+      edges_vertices: [[0,1],[1,2],[2,5],[5,8],[8,7],[7,6],[6,3],[3,0],[0,4],[2,4],[6,4],[8,4],[1,4],[3,4],[5,4],[7,4]],
+      edges_assignment: ['B','B','B','B','B','B','B','B','V','V','V','V','V','V','V','V'],
+      edges_foldAngle: [0,0,0,0,0,0,0,0,180,180,180,180,180,180,180,180],
+      faces_vertices: [[0,1,4,3],[1,2,5,4],[3,4,7,6],[4,5,8,7],[0,4],[2,4],[6,4],[8,4]],
+    },
+    strain: 0.0,
+  },
+  map_fold: {
+    name: 'Map Fold',
+    description: 'Accordion grid with alternating M/V',
+    difficulty: 4,
+    max_folds: 6,
+    similarity: 0.0,
+    fold: {
+      vertices_coords: [
+        [0,0],[1/3,0],[2/3,0],[1,0],
+        [0,1/3],[1/3,1/3],[2/3,1/3],[1,1/3],
+        [0,2/3],[1/3,2/3],[2/3,2/3],[1,2/3],
+        [0,1],[1/3,1],[2/3,1],[1,1],
+      ],
+      edges_vertices: [
+        [0,1],[1,2],[2,3],[3,7],[7,11],[11,15],[15,14],[14,13],[13,12],[12,8],[8,4],[4,0],
+        [4,5],[5,6],[6,7],[8,9],[9,10],[10,11],
+        [1,5],[2,6],[5,9],[6,10],[13,9],[14,10],
+      ],
+      edges_assignment: [
+        'B','B','B','B','B','B','B','B','B','B','B','B',
+        'V','M','V','M','V','M',
+        'V','V','V','V','V','V',
+      ],
+      edges_foldAngle: [
+        0,0,0,0,0,0,0,0,0,0,0,0,
+        180,-180,180,-180,180,-180,
+        180,180,180,180,180,180,
+      ],
+      faces_vertices: [
+        [0,1,5,4],[1,2,6,5],[2,3,7,6],
+        [4,5,9,8],[5,6,10,9],[6,7,11,10],
+        [8,9,13,12],[9,10,14,13],[10,11,15,14],
+      ],
     },
     strain: 0.0,
   },
@@ -1550,24 +1854,48 @@ window.showView = showView;
 
 // ─── GRID VIEW ────────────────────────────────────────────────
 
+function makeEl(tag, cls, text) {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
+
 function initGrid() {
   gridInitialized = true;
   const gridEl = document.getElementById('grid');
 
   for (const [key, task] of Object.entries(TASKS)) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-canvas" id="card-${key}"></div>
-      <div class="card-info">
-        <div class="card-name">${task.name}</div>
-        <div class="card-desc">${task.description} \u00b7 difficulty ${task.difficulty}</div>
-        <div class="card-score">
-          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${task.similarity * 100}%"></div></div>
-          <div class="score-label">${Math.round(task.similarity * 100)}%</div>
-        </div>
-      </div>
-    `;
+    const card = makeEl('div', 'card');
+
+    const canvas = makeEl('div', 'card-canvas');
+    canvas.id = 'card-' + key;
+    card.appendChild(canvas);
+
+    const info = makeEl('div', 'card-info');
+
+    info.appendChild(makeEl('div', 'card-name', task.name));
+
+    const meta = makeEl('div', 'card-meta');
+    meta.appendChild(makeEl('div', 'card-desc', task.description + ' \u00b7 difficulty ' + task.difficulty));
+    const badge = makeEl('span', 'max-folds-badge', 'up to ' + (task.max_folds || 1) + ' fold' + ((task.max_folds || 1) !== 1 ? 's' : ''));
+    meta.appendChild(badge);
+    info.appendChild(meta);
+
+    const scoreRow = makeEl('div', 'score-row');
+    const scoreLabel = makeEl('span', '', 'best progress');
+    scoreLabel.style.cssText = 'font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;font-weight:500';
+    scoreRow.appendChild(scoreLabel);
+    const barBg = makeEl('div', 'score-bar-bg');
+    barBg.style.flex = '1';
+    const barFill = makeEl('div', 'score-bar-fill');
+    barFill.style.width = (task.similarity * 100) + '%';
+    barBg.appendChild(barFill);
+    scoreRow.appendChild(barBg);
+    scoreRow.appendChild(makeEl('div', 'score-label', Math.round(task.similarity * 100) + '%'));
+    info.appendChild(scoreRow);
+
+    card.appendChild(info);
     card.addEventListener('click', () => showDetail(key));
     gridEl.appendChild(card);
   }
@@ -1609,26 +1937,24 @@ function showDetail(key) {
   showView('detail');
 
   document.getElementById('detail-title').textContent = task.name;
-  document.getElementById('detail-subtitle').textContent = task.description;
+  document.getElementById('detail-step-info').textContent = 'step 0 / ' + (task.max_folds || 1);
 
-  // 2D crease pattern
-  draw2DCrease(task);
-
-  // Metrics
-  const foldCount = task.fold.edges_assignment.filter(a => a === 'M' || a === 'V').length;
-  document.getElementById('m-sim').textContent = Math.round(task.similarity * 100) + '%';
-  document.getElementById('m-folds').textContent = foldCount;
-  document.getElementById('m-strain').textContent = task.strain.toFixed(4);
-  document.getElementById('m-verts').textContent = task.fold.vertices_coords.length;
-  document.getElementById('m-status').textContent = task.strain < 0.05 ? 'stable' : 'settling';
-
-  const simEl = document.getElementById('m-sim');
-  simEl.className = 'metric-value ' + (task.similarity > 0.9 ? 'high' : task.similarity > 0.5 ? 'mid' : 'low');
+  // 2D crease pattern — show empty paper with target ghost
+  draw2DPaper([], cornerAnchors(), task);
 
   // 3D viewer
+  init3DViewer();
+  addTargetGhost(task);
+}
+
+function cornerAnchors() {
+  return [[0,0],[1,0],[1,1],[0,1],[0,0.5],[1,0.5],[0.5,0],[0.5,1]];
+}
+
+function init3DViewer() {
   const panel = document.getElementById('panel-3d');
   if (detailRenderer) {
-    panel.removeChild(detailRenderer.domElement);
+    try { panel.removeChild(detailRenderer.domElement); } catch(e) {}
     detailRenderer.dispose();
     if (detailAnimId) cancelAnimationFrame(detailAnimId);
   }
@@ -1639,13 +1965,6 @@ function showDetail(key) {
   detailRenderer = setup.renderer;
   detailControls = setup.controls;
 
-  const slider = document.getElementById('crease-slider');
-  slider.value = 100;
-  document.getElementById('slider-val').textContent = '100%';
-
-  updateDetailMesh(1.0);
-  addTargetGhost(task);
-
   const animateDetail = () => {
     detailAnimId = requestAnimationFrame(animateDetail);
     detailControls.update();
@@ -1654,6 +1973,7 @@ function showDetail(key) {
   animateDetail();
 
   const resizeObserver = new ResizeObserver(() => {
+    if (!detailRenderer) return;
     const w = panel.clientWidth;
     const h = panel.clientHeight;
     detailCamera.aspect = w / h;
@@ -1706,64 +2026,109 @@ function addTargetGhost(task) {
   detailScene.add(ghost);
 }
 
-function draw2DCrease(task) {
+// ─── 2D PAPER DRAWING ─────────────────────────────────────────
+
+// Track click-to-place state
+let clickFrom = null; // [x,y] or null
+
+function draw2DPaper(creases, anchorPoints, task) {
   const container = document.getElementById('crease-2d');
-  const fold = task.fold;
-  const verts = fold.vertices_coords;
+  const pad = 0.12;
+  const size = 260;
+  const scale = size / (1 + pad * 2);
+  const toX = (x) => (x + pad) * scale;
+  const toY = (y) => size - (y + pad) * scale;
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const v of verts) {
-    minX = Math.min(minX, v[0]); minY = Math.min(minY, v[1]);
-    maxX = Math.max(maxX, v[0]); maxY = Math.max(maxY, v[1]);
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+  svg.style.cursor = 'crosshair';
+
+  // Paper background
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('x', toX(0)); bg.setAttribute('y', toY(1));
+  bg.setAttribute('width', scale); bg.setAttribute('height', scale);
+  bg.setAttribute('fill', '#ffffff');
+  bg.setAttribute('stroke', '#1a1816');
+  bg.setAttribute('stroke-width', '1.5');
+  svg.appendChild(bg);
+
+  // Target ghost creases (from task.fold if available)
+  if (task && task.fold) {
+    const tf = task.fold;
+    const tv = tf.vertices_coords;
+    for (let i = 0; i < tf.edges_vertices.length; i++) {
+      const a = tf.edges_assignment[i];
+      if (a !== 'M' && a !== 'V') continue;
+      const [v1, v2] = tf.edges_vertices[i];
+      const line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', toX(tv[v1][0])); line.setAttribute('y1', toY(tv[v1][1]));
+      line.setAttribute('x2', toX(tv[v2][0])); line.setAttribute('y2', toY(tv[v2][1]));
+      line.setAttribute('stroke', a === 'M' ? '#c0392b' : '#2471a3');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '4 4');
+      line.setAttribute('opacity', '0.18');
+      svg.appendChild(line);
+    }
   }
 
-  const pad = 0.15;
-  const vw = maxX - minX + pad * 2;
-  const vh = maxY - minY + pad * 2;
-  const size = 280;
-  const scale = size / Math.max(vw, vh);
-
-  const toX = (x) => (x - minX + pad) * scale;
-  const toY = (y) => size - (y - minY + pad) * scale;
-
-  const STROKE = { M: '#c0392b', V: '#2471a3', B: '#1a1816', F: '#ddd8d0', U: '#a9a49d' };
-
-  let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
-
-  for (const face of fold.faces_vertices) {
-    const pts = face.map(vi => `${toX(verts[vi][0])},${toY(verts[vi][1])}`).join(' ');
-    svg += `<polygon points="${pts}" fill="#ffffff" stroke="none"/>`;
+  // Placed creases
+  const STROKE = { M: '#c0392b', V: '#2471a3' };
+  for (const c of creases) {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', toX(c.from[0])); line.setAttribute('y1', toY(c.from[1]));
+    line.setAttribute('x2', toX(c.to[0]));   line.setAttribute('y2', toY(c.to[1]));
+    line.setAttribute('stroke', STROKE[c.assignment] || '#888');
+    line.setAttribute('stroke-width', '1.8');
+    line.setAttribute('stroke-linecap', 'round');
+    if (c.assignment === 'M') line.setAttribute('stroke-dasharray', '6 3');
+    svg.appendChild(line);
   }
 
-  for (let i = 0; i < fold.edges_vertices.length; i++) {
-    const [v1, v2] = fold.edges_vertices[i];
-    const a = fold.edges_assignment[i];
-    const color = STROKE[a] || '#aaa';
-    const width = a === 'B' ? 2 : 1.5;
-    const dash = a === 'M' ? 'stroke-dasharray="6 3"' : a === 'V' ? 'stroke-dasharray="2 2"' : '';
-
-    svg += `<line x1="${toX(verts[v1][0])}" y1="${toY(verts[v1][1])}" x2="${toX(verts[v2][0])}" y2="${toY(verts[v2][1])}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" ${dash}/>`;
+  // Anchor points — clickable
+  for (const pt of (anchorPoints || [])) {
+    const isFrom = clickFrom && Math.abs(pt[0]-clickFrom[0]) < 0.01 && Math.abs(pt[1]-clickFrom[1]) < 0.01;
+    const circle = document.createElementNS(ns, 'circle');
+    circle.setAttribute('cx', toX(pt[0])); circle.setAttribute('cy', toY(pt[1]));
+    circle.setAttribute('r', isFrom ? '7' : '5');
+    circle.setAttribute('fill', isFrom ? '#2471a3' : '#ffffff');
+    circle.setAttribute('stroke', isFrom ? '#2471a3' : '#7a756e');
+    circle.setAttribute('stroke-width', '1.5');
+    circle.style.cursor = 'pointer';
+    const pCopy = pt.slice();
+    circle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleAnchorClick(pCopy, anchorPoints, task, creases);
+    });
+    svg.appendChild(circle);
   }
 
-  for (let i = 0; i < verts.length; i++) {
-    svg += `<circle cx="${toX(verts[i][0])}" cy="${toY(verts[i][1])}" r="3" fill="var(--text)" opacity="0.3"/>`;
-  }
-
-  svg += '</svg>';
-  container.innerHTML = svg;
+  container.replaceChildren(svg);
 }
 
-function showGrid() {
-  showView('grid');
+function handleAnchorClick(pt, anchorPoints, task, creases) {
+  if (!episode.sessionId) {
+    // Auto-start episode on first click
+    startEpisode().then(() => {
+      clickFrom = pt;
+      draw2DPaper(episode.creases, episode.anchorPoints, task);
+    });
+    return;
+  }
+  if (!clickFrom) {
+    clickFrom = pt;
+    document.getElementById('crease-from-x').value = pt[0];
+    document.getElementById('crease-from-y').value = pt[1];
+    draw2DPaper(creases, anchorPoints, task);
+  } else {
+    document.getElementById('crease-to-x').value = pt[0];
+    document.getElementById('crease-to-y').value = pt[1];
+    clickFrom = null;
+    draw2DPaper(creases, anchorPoints, task);
+  }
 }
-
-// ─── SLIDER ───────────────────────────────────────────────────
-
-document.getElementById('crease-slider').addEventListener('input', (e) => {
-  const val = parseInt(e.target.value);
-  document.getElementById('slider-val').textContent = val + '%';
-  updateDetailMesh(val / 100);
-});
 
 // ─── BACK BUTTON & KEYBOARD ───────────────────────────────────
 
@@ -1781,147 +2146,330 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── TRY-IT PANEL ─────────────────────────────────────────────
+// ─── V2 EPISODE STATE ──────────────────────────────────────────
 
-// Base URL: same-origin when served via Railway/uvicorn, localhost when file://
+// Base URL: same-origin when served via uvicorn, localhost when file://
 const SERVER = location.protocol === 'file:' ? 'http://localhost:8000' : location.origin;
 
-// "Bad" folds: valid FOLD JSON but wrong geometry → low reward
-const BAD_FOLDS = {
-  triangle: {
-    vertices_coords: [[0,0],[1,0],[1,1],[0,1]],
-    edges_vertices:  [[0,1],[1,2],[2,3],[3,0],[0,2]],
-    edges_assignment: ['B','B','B','B','V'],
-    edges_foldAngle:  [0,0,0,0,45],           // 45° instead of 180° → partial fold
-    faces_vertices:  [[0,1,2],[0,2,3]],
-  },
-  half_fold: {
-    vertices_coords: [[0,0],[1,0],[1,1],[0,1],[0,0.25],[1,0.25]],
-    edges_vertices:  [[0,1],[1,5],[5,2],[2,3],[3,4],[4,0],[4,5]],
-    edges_assignment: ['B','B','B','B','B','B','V'],
-    edges_foldAngle:  [0,0,0,0,0,0,180],      // fold at y=0.25 not y=0.5
-    faces_vertices:  [[0,1,5,4],[4,5,2,3]],
-  },
-  quarter_fold: {
-    vertices_coords: [[0,0],[0.5,0],[1,0],[0,0.5],[0.5,0.5],[1,0.5],[0,1],[0.5,1],[1,1]],
-    edges_vertices:  [[0,1],[1,2],[2,5],[5,8],[8,7],[7,6],[6,3],[3,0],[1,4],[4,7],[3,4],[4,5]],
-    edges_assignment: ['B','B','B','B','B','B','B','B','V','V','V','V'],
-    edges_foldAngle:  [0,0,0,0,0,0,0,0,90,90,90,90],  // 90° not 180°
-    faces_vertices:  [[0,1,4,3],[1,2,5,4],[3,4,7,6],[4,5,8,7]],
-  },
-  letter_fold: {
-    vertices_coords: [[0,0],[1,0],[0,1/3],[1,1/3],[0,2/3],[1,2/3],[0,1],[1,1]],
-    edges_vertices:  [[0,1],[1,3],[3,5],[5,7],[7,6],[6,4],[4,2],[2,0],[2,3],[4,5]],
-    edges_assignment: ['B','B','B','B','B','B','B','B','V','V'],  // both V, not V+M
-    edges_foldAngle:  [0,0,0,0,0,0,0,0,180,180],
-    faces_vertices:  [[0,1,3,2],[2,3,5,4],[4,5,7,6]],
-  },
+const episode = {
+  sessionId: null,
+  taskKey: null,
+  step: 0,
+  maxFolds: 0,
+  done: false,
+  anchorPoints: [],
+  creases: [],
+  cumulative: 0,
 };
 
-let activeFoldData = null;
+function resetEpisodeState() {
+  episode.sessionId = null;
+  episode.step = 0;
+  episode.done = false;
+  episode.anchorPoints = cornerAnchors();
+  episode.creases = [];
+  episode.cumulative = 0;
+  clickFrom = null;
+}
 
-function loadPreset(type) {
+async function startEpisode() {
+  if (!currentTaskKey) return;
   const task = TASKS[currentTaskKey];
-  const data = type === 'good' ? task.fold : BAD_FOLDS[currentTaskKey];
-  activeFoldData = data;
+  episode.taskKey = currentTaskKey;
+  episode.maxFolds = task.max_folds || 1;
 
-  // Show the JSON panel with the selected fold
-  document.getElementById('try-json-panel').style.display = 'block';
-  document.getElementById('fold-json-input').value = JSON.stringify(data, null, 2);
+  resetEpisodeState();
 
-  // Highlight active preset button
-  ['bad','good','custom'].forEach(id => {
-    document.getElementById('preset-' + id).classList.toggle('active', id === type);
-  });
-
-  // Clear previous reward
-  const pill = document.getElementById('reward-pill');
-  pill.style.display = 'none';
-}
-
-function toggleCustomJSON() {
-  const panel = document.getElementById('try-json-panel');
-  const isOpen = panel.style.display === 'block';
-  panel.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen && activeFoldData) {
-    document.getElementById('fold-json-input').value = JSON.stringify(activeFoldData, null, 2);
-  }
-  ['bad','good'].forEach(id => document.getElementById('preset-' + id).classList.remove('active'));
-  document.getElementById('preset-custom').classList.toggle('active', !isOpen);
-}
-
-async function submitCurrentFold() {
-  const btn = document.getElementById('try-submit-btn');
-  const pill = document.getElementById('reward-pill');
-
-  // Parse JSON from textarea (or use activeFoldData)
-  let foldData;
-  try {
-    const raw = document.getElementById('fold-json-input').value.trim();
-    foldData = raw ? JSON.parse(raw) : activeFoldData;
-    if (!foldData) { alert('Select a preset or paste FOLD JSON first.'); return; }
-  } catch(e) {
-    pill.className = 'reward-pill low';
-    pill.style.display = 'flex';
-    pill.textContent = 'Invalid JSON';
-    return;
-  }
-
-  btn.textContent = 'Scoring…';
+  const btn = document.getElementById('start-episode-btn');
+  btn.textContent = 'Starting…';
   btn.disabled = true;
-  pill.style.display = 'none';
 
   try {
-    // Create session → reset → step
-    const sid = (await (await fetch(`${SERVER}/sessions`, {
+    const sidRes = await fetch(SERVER + '/sessions', {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}'
-    })).json()).session_id;
+    });
+    const sidData = await sidRes.json();
+    episode.sessionId = sidData.session_id;
 
-    await fetch(`${SERVER}/sessions/${sid}/reset`, {
+    const resetRes = await fetch(SERVER + '/sessions/' + episode.sessionId + '/reset', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ task_name: currentTaskKey }),
     });
+    const resetData = await resetRes.json();
+    const obs = resetData.observation || resetData;
 
-    const stepRes = await fetch(`${SERVER}/sessions/${sid}/step`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ fold_data: foldData }),
-    });
-    const result = await stepRes.json();
-    const obs = result.observation || result;
-
-    const reward = obs.reward ?? 0;
-    const sim    = obs.shape_similarity ?? 0;
-    const err    = obs.error;
-
-    // Show reward pill
-    const level = reward >= 16 ? 'high' : reward >= 8 ? 'mid' : 'low';
-    pill.className = 'reward-pill ' + level;
-    pill.style.display = 'flex';
-    pill.textContent = err
-      ? `Error: ${err.slice(0,40)}`
-      : `reward ${reward.toFixed(2)} / 20  ·  ${Math.round(sim * 100)}% match`;
-
-    // Update similarity metric
-    const simEl = document.getElementById('m-sim');
-    simEl.textContent = Math.round(sim * 100) + '%';
-    simEl.className = 'metric-value ' + (sim > 0.9 ? 'high' : sim > 0.5 ? 'mid' : 'low');
-
-    // Update 3D view: render the submitted fold using returned positions
-    if (obs.final_positions && obs.final_positions.length > 0 && foldData.faces_vertices) {
-      renderPositions(foldData, obs.final_positions);
+    if (obs.anchor_points && obs.anchor_points.length) {
+      episode.anchorPoints = obs.anchor_points;
     }
 
-  } catch(e) {
-    pill.className = 'reward-pill low';
-    pill.style.display = 'flex';
-    pill.textContent = 'Server unreachable — start uvicorn locally';
-  }
+    btn.textContent = 'Restart';
+    btn.disabled = false;
 
-  btn.textContent = 'Submit → score';
-  btn.disabled = false;
+    updateStepInfo();
+    resetRewardPanel();
+    draw2DPaper(episode.creases, episode.anchorPoints, task);
+    addTargetGhost(task);
+
+  } catch(e) {
+    // Server not running — use local anchor points
+    episode.sessionId = 'local';
+    btn.textContent = 'Restart';
+    btn.disabled = false;
+    updateStepInfo();
+    resetRewardPanel();
+    draw2DPaper(episode.creases, episode.anchorPoints, task);
+  }
 }
 
-function renderPositions(foldData, finalPositions) {
+async function addCrease() {
+  if (episode.done) return;
+  const task = TASKS[currentTaskKey];
+
+  let crease;
+  if (document.getElementById('crease-inputs-json').style.display !== 'none') {
+    try {
+      crease = JSON.parse(document.getElementById('crease-json-input').value);
+    } catch(e) {
+      alert('Invalid JSON crease'); return;
+    }
+  } else {
+    const fx = parseFloat(document.getElementById('crease-from-x').value);
+    const fy = parseFloat(document.getElementById('crease-from-y').value);
+    const tx = parseFloat(document.getElementById('crease-to-x').value);
+    const ty = parseFloat(document.getElementById('crease-to-y').value);
+    const assign = document.getElementById('assign-M').classList.contains('active-M') ? 'M' : 'V';
+    if (isNaN(fx) || isNaN(fy) || isNaN(tx) || isNaN(ty)) { alert('Enter from/to coordinates'); return; }
+    crease = { from: [fx, fy], to: [tx, ty], assignment: assign };
+  }
+
+  const btn = document.getElementById('add-crease-btn');
+  btn.textContent = 'Scoring…';
+  btn.disabled = true;
+
+  let obs = null;
+  if (episode.sessionId && episode.sessionId !== 'local') {
+    try {
+      const res = await fetch(SERVER + '/sessions/' + episode.sessionId + '/step', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ crease }),
+      });
+      const data = await res.json();
+      obs = data.observation || data;
+    } catch(e) {
+      obs = null;
+    }
+  }
+
+  // Update episode state
+  episode.step += 1;
+  const stepCrease = { ...crease, reward: obs ? (obs.reward || 0) : 0 };
+  episode.creases.push(stepCrease);
+  if (obs && obs.anchor_points) episode.anchorPoints = obs.anchor_points;
+  episode.cumulative += (obs ? (obs.reward || 0) : 0);
+  episode.done = obs ? (obs.done || episode.step >= episode.maxFolds) : (episode.step >= episode.maxFolds);
+
+  // Update UI
+  updateStepInfo();
+  draw2DPaper(episode.creases, episode.anchorPoints, task);
+  if (obs && obs.reward_breakdown) updateRewardBars(obs.reward_breakdown, obs.reward || 0);
+  appendStepFeed(episode.step, crease, obs ? (obs.reward || 0) : 0);
+
+  // Update 3D on final step
+  if (episode.done && obs && obs.final_positions && obs.final_positions.length > 0) {
+    render3DPositions(obs.final_positions, task);
+  }
+
+  btn.textContent = 'Add Crease \u2192';
+  btn.disabled = false;
+  clickFrom = null;
+
+  if (episode.done) showEpisodeComplete();
+}
+
+function resetEpisodeUI() {
+  document.getElementById('episode-overlay').style.display = 'none';
+  document.getElementById('start-episode-btn').textContent = 'Start Episode';
+  document.getElementById('start-episode-btn').disabled = false;
+  resetEpisodeState();
+  if (currentTaskKey) {
+    const task = TASKS[currentTaskKey];
+    updateStepInfo();
+    resetRewardPanel();
+    draw2DPaper([], cornerAnchors(), task);
+    init3DViewer();
+    addTargetGhost(task);
+  }
+}
+
+function updateStepInfo() {
+  document.getElementById('detail-step-info').textContent =
+    'step ' + episode.step + ' / ' + (episode.maxFolds || TASKS[currentTaskKey]?.max_folds || 1);
+}
+
+function resetRewardPanel() {
+  const barsEl = document.getElementById('reward-bars');
+  barsEl.replaceChildren();
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:11px;color:var(--text-tertiary);font-weight:300;text-align:center;padding:8px 0';
+  hint.textContent = 'Add a crease to see reward breakdown';
+  barsEl.appendChild(hint);
+
+  document.getElementById('reward-totals').style.display = 'none';
+
+  const feed = document.getElementById('step-feed');
+  feed.replaceChildren();
+  const empty = document.createElement('div');
+  empty.className = 'step-feed-empty';
+  empty.textContent = 'No steps yet';
+  feed.appendChild(empty);
+}
+
+function updateRewardBars(breakdown, stepTotal) {
+  const keys = ['progress', 'delta', 'kawasaki', 'maekawa', 'blb', 'economy'];
+  const barsEl = document.getElementById('reward-bars');
+  barsEl.replaceChildren();
+
+  for (const k of keys) {
+    const val = breakdown[k] ?? 0;
+    const pct = Math.round(val * 100);
+    const cls = val > 0.8 ? 'high' : val > 0.4 ? 'mid' : 'low';
+
+    const row = document.createElement('div');
+    row.className = 'reward-bar-row';
+
+    const label = document.createElement('div');
+    label.className = 'reward-bar-label';
+    label.textContent = k;
+
+    const track = document.createElement('div');
+    track.className = 'reward-bar-track';
+    const fill = document.createElement('div');
+    fill.className = 'reward-bar-fill ' + cls;
+    fill.style.width = pct + '%';
+    track.appendChild(fill);
+
+    const valEl = document.createElement('div');
+    valEl.className = 'reward-bar-val';
+    valEl.textContent = pct + '%';
+
+    row.appendChild(label);
+    row.appendChild(track);
+    row.appendChild(valEl);
+    barsEl.appendChild(row);
+  }
+
+  if (breakdown.completion > 0) {
+    const row = document.createElement('div');
+    row.className = 'reward-bar-row';
+    const label = document.createElement('div');
+    label.className = 'reward-bar-label';
+    label.textContent = 'completion';
+    const valEl = document.createElement('div');
+    valEl.className = 'reward-bar-val';
+    valEl.style.color = 'var(--success)';
+    valEl.style.gridColumn = '2 / 4';
+    valEl.textContent = '+' + breakdown.completion.toFixed(1);
+    row.appendChild(label); row.appendChild(valEl);
+    barsEl.appendChild(row);
+  }
+
+  document.getElementById('reward-totals').style.display = 'flex';
+  document.getElementById('step-total').textContent = (stepTotal || 0).toFixed(3);
+  document.getElementById('cumulative-total').textContent = episode.cumulative.toFixed(3);
+}
+
+function appendStepFeed(step, crease, reward) {
+  const feed = document.getElementById('step-feed');
+  // Remove empty state
+  if (feed.querySelector('.step-feed-empty')) feed.replaceChildren();
+
+  const item = document.createElement('div');
+  item.className = 'step-feed-item';
+
+  const num = document.createElement('div');
+  num.className = 'step-feed-num';
+  num.textContent = 'Step ' + step;
+
+  const desc = document.createElement('div');
+  desc.className = 'step-feed-desc';
+  const a = crease.assignment;
+  const f = crease.from.map(v => v.toFixed ? v.toFixed(2) : v).join(',');
+  const t = crease.to.map(v => v.toFixed ? v.toFixed(2) : v).join(',');
+  desc.textContent = (a === 'M' ? 'M' : 'V') + ' [' + f + ']\u2192[' + t + ']';
+
+  const rEl = document.createElement('div');
+  rEl.className = 'step-feed-reward ' + (reward >= 0 ? 'pos' : 'neg');
+  rEl.textContent = (reward >= 0 ? '+' : '') + reward.toFixed(3);
+
+  item.appendChild(num);
+  item.appendChild(desc);
+  item.appendChild(rEl);
+  feed.appendChild(item);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function showEpisodeComplete() {
+  const scoreEl = document.getElementById('overlay-score');
+  scoreEl.textContent = episode.cumulative.toFixed(3);
+  const detail = document.getElementById('overlay-detail');
+  detail.textContent = episode.step + ' steps \u00b7 cumulative reward ' + episode.cumulative.toFixed(3);
+  document.getElementById('episode-overlay').style.display = 'flex';
+}
+
+// ─── CREASE INPUT CONTROLS ─────────────────────────────────────
+
+function setAssignment(a) {
+  document.getElementById('assign-M').className = 'assign-btn' + (a === 'M' ? ' active-M' : '');
+  document.getElementById('assign-V').className = 'assign-btn' + (a === 'V' ? ' active-V' : '');
+}
+
+function setInputMode(mode) {
+  document.getElementById('mode-click').classList.toggle('active', mode === 'click');
+  document.getElementById('mode-json').classList.toggle('active', mode === 'json');
+  document.getElementById('crease-inputs-click').style.display = mode === 'click' ? 'flex' : 'none';
+  document.getElementById('crease-inputs-json').style.display = mode === 'json' ? 'block' : 'none';
+}
+
+// ─── PRESETS ───────────────────────────────────────────────────
+
+const PRESETS = {
+  triangle:       [{ from:[0,0], to:[1,1], assignment:'V' }],
+  half_fold:      [{ from:[0,0.5], to:[1,0.5], assignment:'V' }],
+  quarter_fold:   [{ from:[0.5,0], to:[0.5,1], assignment:'V' }, { from:[0,0.5], to:[1,0.5], assignment:'V' }],
+  letter_fold:    [{ from:[0,1/3], to:[1,1/3], assignment:'V' }, { from:[0,2/3], to:[1,2/3], assignment:'M' }],
+  waterbomb_base: [{ from:[0,0], to:[1,1], assignment:'V' }, { from:[1,0], to:[0,1], assignment:'V' },
+                   { from:[0.5,0], to:[0.5,1], assignment:'V' }, { from:[0,0.5], to:[1,0.5], assignment:'V' }],
+  map_fold:       [{ from:[1/3,0], to:[1/3,1], assignment:'V' }, { from:[2/3,0], to:[2/3,1], assignment:'M' },
+                   { from:[0,1/3], to:[1,1/3], assignment:'V' }, { from:[0,2/3], to:[1,2/3], assignment:'M' },
+                   { from:[1/3,1/3], to:[2/3,2/3], assignment:'V' }, { from:[2/3,1/3], to:[1/3,2/3], assignment:'M' }],
+};
+
+let presetRunning = false;
+
+async function playPreset() {
+  if (!currentTaskKey || presetRunning) return;
+  const steps = PRESETS[currentTaskKey];
+  if (!steps || !steps.length) return;
+  presetRunning = true;
+
+  // Reset and start episode
+  await startEpisode();
+
+  for (const crease of steps) {
+    if (!presetRunning) break;
+    document.getElementById('crease-from-x').value = crease.from[0];
+    document.getElementById('crease-from-y').value = crease.from[1];
+    document.getElementById('crease-to-x').value = crease.to[0];
+    document.getElementById('crease-to-y').value = crease.to[1];
+    setAssignment(crease.assignment);
+    await addCrease();
+    if (episode.done) break;
+    await new Promise(r => setTimeout(r, 600));
+  }
+  presetRunning = false;
+}
+
+function render3DPositions(finalPositions, task) {
   if (!detailScene) return;
   if (detailMeshGroup) detailScene.remove(detailMeshGroup);
 
@@ -1933,49 +2481,37 @@ function renderPositions(foldData, finalPositions) {
     posArr[i*3+2] = finalPositions[i][2];
   }
 
-  const indices = [];
-  for (const face of foldData.faces_vertices) {
-    for (let i = 1; i < face.length - 1; i++) indices.push(face[0], face[i], face[i+1]);
+  // Use task fold faces if available, else just show lines
+  const foldFaces = task && task.fold && task.fold.faces_vertices;
+  const group = new THREE.Group();
+
+  if (foldFaces) {
+    const indices = [];
+    for (const face of foldFaces) {
+      for (let i = 1; i < face.length - 1; i++) indices.push(face[0], face[i], face[i+1]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshPhongMaterial({ color: 0xf5f3f0, side: THREE.DoubleSide, shininess: 30 });
+    group.add(new THREE.Mesh(geo, mat));
   }
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
+  const box = new THREE.Box3().setFromObject(group);
+  group.position.sub(box.getCenter(new THREE.Vector3()));
 
-  const mat = new THREE.MeshPhongMaterial({ color: 0xf5f3f0, side: THREE.DoubleSide, shininess: 30 });
-  const mesh = new THREE.Mesh(geo, mat);
-
-  // Center it
-  const box = new THREE.Box3().setFromObject(mesh);
-  mesh.position.sub(box.getCenter(new THREE.Vector3()));
-
-  detailMeshGroup = new THREE.Group();
-  detailMeshGroup.add(mesh);
+  detailMeshGroup = group;
   detailScene.add(detailMeshGroup);
 }
 
-// ─── WEBSOCKET (optional live connection) ─────────────────────
-
-function connectWS() {
-  try {
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${proto}//${location.host}/ws`);
-    ws.onopen = () => console.log('[WS] Connected');
-    ws.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      if (data.type === 'observation' && data.data?.observation) {
-        const obs = data.data.observation;
-        console.log('[WS] Observation:', obs.shape_similarity);
-      }
-    };
-    ws.onerror = () => console.log('[WS] No server (using demo data)');
-  } catch (e) {
-    // Server not running, use demo data
-  }
-}
-
-connectWS();
+// Expose globals for inline handlers
+window.startEpisode = startEpisode;
+window.addCrease = addCrease;
+window.resetEpisodeUI = resetEpisodeUI;
+window.playPreset = playPreset;
+window.setAssignment = setAssignment;
+window.setInputMode = setInputMode;
 
 // ─── START ────────────────────────────────────────────────────
 
