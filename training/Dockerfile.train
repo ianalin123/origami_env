@@ -1,0 +1,37 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install PyTorch with CUDA support + training stack
+RUN pip install --no-cache-dir \
+    torch --index-url https://download.pytorch.org/whl/cu124 && \
+    pip install --no-cache-dir \
+    "trl>=0.7" \
+    "datasets>=2.14" \
+    "transformers>=4.40" \
+    "accelerate>=0.30" \
+    "peft>=0.10" \
+    "bitsandbytes>=0.43" \
+    numpy scipy pydantic
+
+# Copy the full repo
+COPY . /app
+
+# Default: run training script
+# Override TASK, MODEL, MAX_STEPS etc. via env vars on Northflank
+ENV TASK="triangle"
+ENV MODEL="Qwen/Qwen2.5-3B-Instruct"
+ENV MAX_STEPS="600"
+ENV NUM_GENERATIONS="4"
+ENV LR="2e-4"
+
+CMD ["sh", "-c", "python -m training.train_grpo --task $TASK --model $MODEL --max_steps $MAX_STEPS --num_generations $NUM_GENERATIONS --lr $LR"]
+="triangle"
+ENV MODEL="Qwen/Qwen2.5-3B-Instruct"
+ENV MAX_STEPS="600"
+ENV NUM_GENERATIONS="4"
+ENV LR="2e-4"
+
+CMD ["sh", "-c", "python -m training.train_grpo --task $TASK --model $MODEL --max_steps $MAX_STEPS --num_generations $NUM_GENERATIONS --lr $LR"]

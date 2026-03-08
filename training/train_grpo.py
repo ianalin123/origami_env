@@ -5,11 +5,15 @@ Follows the 2048 OpenEnv + Unsloth pattern:
 - Two reward functions: valid_fold + shape_match
 - GRPOTrainer from TRL handles the RL loop
 
-Usage (Colab):
-    python -m origami_env.training.train_grpo --task triangle --max_steps 600
+Usage (local/Colab):
+    python -m training.train_grpo --task triangle --max_steps 600
+
+Usage (Northflank — env vars set in Dockerfile.train):
+    python -m training.train_grpo --task $TASK --model $MODEL --max_steps $MAX_STEPS
 """
 
 import argparse
+import os
 
 PROMPT_TEMPLATE = """You are an origami designer. Generate a FOLD-format crease pattern
 that, when folded, produces the target shape described below.
@@ -46,17 +50,23 @@ def main():
     parser.add_argument("--task", default="triangle", help="Task name")
     parser.add_argument("--max_steps", type=int, default=600)
     parser.add_argument("--num_generations", type=int, default=4)
-    parser.add_argument("--model", default="unsloth/gpt-oss-20b")
+    parser.add_argument("--model", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--lr", type=float, default=2e-4)
     args = parser.parse_args()
 
     # --- These imports are heavy, only load when actually training ---
     from datasets import Dataset
     from trl import GRPOConfig, GRPOTrainer
-    from unsloth import FastLanguageModel
 
     from origami_server.tasks import get_task
     from training.reward import shape_match, valid_fold
+
+    # Try Unsloth first (CUDA), fall back to HF+PEFT
+    try:
+        from unsloth import FastLanguageModel
+        USE_UNSLOTH = True
+    except ImportError:
+        USE_UNSLOTH = False
 
     task = get_task(args.task)
     prompt_text = build_prompt(task)
@@ -73,22 +83,48 @@ def main():
     )
 
     # Load model with LoRA
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=args.model,
-        load_in_4bit=True,
-        max_seq_length=2048,
-    )
+    if USE_UNSLOTH:
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=args.model,
+            load_in_4bit=True,
+            max_seq_length=2048,
+        )
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r=8,
+            target_modules=[
+                "q_proj", "k_proj", "v_proj", "o_proj",
+                "gate_proj", "up_proj", "down_proj",
+            ],
+            lora_alpha=16,
+            use_gradient_checkpointing="unsloth",
+        )
+    else:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+        from peft import LoraConfig, get_peft_model
 
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r=8,
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ],
-        lora_alpha=16,
-        use_gradient_checkpointing="unsloth",
-    )
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        ) if torch.cuda.is_available() else None
+
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            quantization_config=bnb_config,
+            device_map="auto" if torch.cuda.is_available() else "cpu",
+            torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+        )
+        model = get_peft_model(model, LoraConfig(
+            r=8, lora_alpha=16, task_type="CAUSAL_LM",
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                            "gate_proj", "up_proj", "down_proj"],
+        ))
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
     # Wrap shape_match to inject task_name
     def shape_match_reward(completions, **kwargs):
@@ -110,7 +146,7 @@ def main():
         max_completion_length=1024,
         max_steps=args.max_steps,
         save_steps=100,
-        output_dir="outputs",
+        output_dir=os.environ.get("OUTPUT_DIR", "outputs"),
     )
 
     trainer = GRPOTrainer(
@@ -122,6 +158,15 @@ def main():
     )
 
     trainer.train()
+
+    # Save the LoRA adapter
+    save_path = os.path.join(
+        os.environ.get("OUTPUT_DIR", "outputs"),
+        f"origami-{args.task}-lora-final",
+    )
+    model.save_pretrained(save_path)
+    tokenizer.save_pretrained(save_path)
+    print(f"Model saved to {save_path}")
 
 
 if __name__ == "__main__":
