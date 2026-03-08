@@ -16,6 +16,7 @@ app = create_app(
     OrigamiAction,
     OrigamiObservation,
     env_name="origami_env",
+    max_concurrent_envs=int(os.environ.get("MAX_CONCURRENT_ENVS", 1)),
 )
 
 from .tasks import TASKS

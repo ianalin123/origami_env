@@ -1,20 +1,16 @@
 """GRPO reward functions for origami RL training.
 
-Two reward functions (matching the 2048 pattern):
-1. valid_fold: Does the LLM output parse as valid FOLD JSON?
-2. shape_match: Simulate and compare to target shape.
+Follows the OpenEnv 2048 pattern exactly:
+- launch_openenv() spawns/reuses the origami server
+- Reward functions call the server via EnvClient
+- Server computes simulation + shape matching, returns reward
+
+These functions are also importable for use in notebooks.
 """
 
 import json
 import re
 from typing import Any
-
-import numpy as np
-
-from origami_server.engine.fold_parser import validate_fold
-from origami_server.engine.shape_match import compute_shape_match
-from origami_server.engine.simulate import simulate
-from origami_server.tasks import get_task
 
 
 def extract_fold_json(response: str) -> dict | None:
@@ -55,6 +51,8 @@ def valid_fold(completions: list, **kwargs: Any) -> list[float]:
     +1.0  valid FOLD JSON with correct structure
     -0.5  parseable JSON but invalid FOLD structure
     -2.0  not parseable as JSON at all
+
+    Local check — no server needed.
     """
     scores = []
     for completion in completions:
@@ -65,58 +63,35 @@ def valid_fold(completions: list, **kwargs: Any) -> list[float]:
             scores.append(-2.0)
             continue
 
-        is_valid, error = validate_fold(fold_data)
-        if is_valid:
-            scores.append(1.0)
-        else:
+        # Basic structural validation
+        required = {"vertices_coords", "edges_vertices", "edges_assignment"}
+        if not required.issubset(fold_data.keys()):
             scores.append(-0.5)
-
-    return scores
-
-
-def shape_match(
-    completions: list,
-    task_name: str = "triangle",
-    **kwargs: Any,
-) -> list[float]:
-    """Reward 2: Simulate the fold and compare to target shape.
-
-    Score = similarity × 20.0 (range: 0 to 20)
-    -1.0  if simulation fails/diverges
-    -2.0  if FOLD data is invalid
-
-    This is the main reward signal — AlphaFold-style shape comparison.
-    """
-    task = get_task(task_name)
-    target_fold = task["target_fold"]
-
-    # Pre-compute target positions
-    try:
-        target_result = simulate(target_fold, crease_percent=1.0)
-        target_positions = target_result.positions
-    except Exception:
-        # Target itself fails — all scores 0
-        return [0.0] * len(completions)
-
-    scores = []
-    for completion in completions:
-        response = completion[0]["content"]
-        fold_data = extract_fold_json(response)
-
-        if fold_data is None:
-            scores.append(-2.0)
             continue
 
-        is_valid, error = validate_fold(fold_data)
-        if not is_valid:
-            scores.append(-1.0)
+        verts = fold_data.get("vertices_coords", [])
+        edges = fold_data.get("edges_vertices", [])
+        assigns = fold_data.get("edges_assignment", [])
+
+        if len(edges) != len(assigns):
+            scores.append(-0.5)
             continue
 
-        try:
-            result = simulate(fold_data, crease_percent=1.0)
-            similarity = compute_shape_match(result.positions, target_positions)
-            scores.append(similarity * 20.0)
-        except Exception:
-            scores.append(-1.0)
+        has_fold = any(a in ("M", "V") for a in assigns)
+        has_boundary = any(a == "B" for a in assigns)
+        if not has_fold or not has_boundary:
+            scores.append(-0.5)
+            continue
+
+        n = len(verts)
+        valid_indices = all(
+            0 <= e[0] < n and 0 <= e[1] < n and e[0] != e[1]
+            for e in edges
+        )
+        if not valid_indices:
+            scores.append(-0.5)
+            continue
+
+        scores.append(1.0)
 
     return scores

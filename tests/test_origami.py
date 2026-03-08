@@ -9,7 +9,7 @@ from origami_server.engine.simulate import simulate
 from origami_server.environment import OrigamiEnvironment
 from origami_server.models import OrigamiAction
 from origami_server.tasks import TASKS, get_task, list_tasks
-from training.reward import extract_fold_json, shape_match, valid_fold
+from training.reward import extract_fold_json, valid_fold
 
 # --- Fixtures ---
 
@@ -221,14 +221,20 @@ class TestRewards:
         assert scores[0] == 1.0
         assert scores[1] == -2.0
 
-    def test_shape_match_reward(self):
-        import json
+    def test_shape_match_via_server(self):
+        """shape_match reward now goes through the server (WebSocket).
+        Test the same flow via TestClient's websocket to verify end-to-end."""
+        from fastapi.testclient import TestClient
 
-        good = [[{"content": json.dumps(TRIANGLE_FOLD)}]]
-        bad = [[{"content": "nope"}]]
-        scores = shape_match(good + bad, task_name="triangle")
-        assert scores[0] == 20.0
-        assert scores[1] == -2.0
+        from origami_server.app import app
+
+        client = TestClient(app)
+        with client.websocket_connect("/ws") as ws:
+            ws.send_json({"type": "reset", "data": {"task_name": "triangle"}})
+            ws.receive_json()
+            ws.send_json({"type": "step", "data": {"fold_data": TRIANGLE_FOLD}})
+            resp = ws.receive_json()
+            assert resp["data"]["reward"] == 20.0
 
 
 # --- API ---
