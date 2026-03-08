@@ -3,12 +3,12 @@
 import numpy as np
 import pytest
 
-from server.engine.fold_parser import parse_fold, validate_fold
-from server.engine.shape_match import compute_shape_match
-from server.engine.simulate import simulate
-from server.environment import OrigamiEnvironment
-from server.models import OrigamiAction
-from server.tasks import TASKS, get_task, list_tasks
+from origami_server.engine.fold_parser import parse_fold, validate_fold
+from origami_server.engine.shape_match import compute_shape_match
+from origami_server.engine.simulate import simulate
+from origami_server.environment import OrigamiEnvironment
+from origami_server.models import OrigamiAction
+from origami_server.tasks import TASKS, get_task, list_tasks
 from training.reward import extract_fold_json, shape_match, valid_fold
 
 # --- Fixtures ---
@@ -239,7 +239,7 @@ class TestAPI:
     def client(self):
         from fastapi.testclient import TestClient
 
-        from server.app import app
+        from origami_server.app import app
 
         return TestClient(app)
 

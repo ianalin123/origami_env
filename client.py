@@ -5,7 +5,7 @@ from typing import Any, Dict
 from openenv.core.client_types import StepResult
 from openenv.core.env_client import EnvClient
 
-from server.models import OrigamiAction, OrigamiObservation, OrigamiState
+from origami_server.models import OrigamiAction, OrigamiObservation, OrigamiState
 
 
 class OrigamiEnv(EnvClient[OrigamiAction, OrigamiObservation, OrigamiState]):

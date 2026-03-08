@@ -55,7 +55,7 @@ def main():
     from trl import GRPOConfig, GRPOTrainer
     from unsloth import FastLanguageModel
 
-    from server.tasks import get_task
+    from origami_server.tasks import get_task
     from training.reward import shape_match, valid_fold
 
     task = get_task(args.task)

@@ -11,10 +11,10 @@ from typing import Any
 
 import numpy as np
 
-from server.engine.fold_parser import validate_fold
-from server.engine.shape_match import compute_shape_match
-from server.engine.simulate import simulate
-from server.tasks import get_task
+from origami_server.engine.fold_parser import validate_fold
+from origami_server.engine.shape_match import compute_shape_match
+from origami_server.engine.simulate import simulate
+from origami_server.tasks import get_task
 
 
 def extract_fold_json(response: str) -> dict | None:
