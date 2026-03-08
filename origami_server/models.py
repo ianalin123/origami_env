@@ -12,18 +12,19 @@ from pydantic import Field
 
 
 class OrigamiAction(Action):
-    """LLM submits a FOLD crease pattern as its action.
+    """LLM action — either a complete FOLD pattern (V1) or a single crease (V2).
 
-    The fold_data dict must contain:
-      - vertices_coords: [[x, y], ...] — 2D vertex positions on flat paper
-      - edges_vertices: [[v1, v2], ...] — edge connectivity
-      - edges_assignment: ["B"|"M"|"V", ...] — boundary/mountain/valley
-      - edges_foldAngle: [angle, ...] — target fold angles in degrees
-        (optional — defaults from assignment: M=-180, V=+180, B=0)
+    V1 (single-shot): set fold_data with complete FOLD-format crease pattern.
+    V2 (multi-step):  set crease with {"from": [x,y], "to": [x,y], "assignment": "M"|"V"}.
+    Exactly one of fold_data or crease must be set.
     """
 
-    fold_data: dict[str, Any] = Field(
-        ..., description="FOLD-format crease pattern JSON"
+    fold_data: dict[str, Any] | None = Field(
+        default=None, description="V1: complete FOLD-format crease pattern JSON"
+    )
+    crease: dict[str, Any] | None = Field(
+        default=None,
+        description='V2: single crease {"from": [x,y], "to": [x,y], "assignment": "M"|"V"}',
     )
 
 
@@ -45,10 +46,19 @@ class OrigamiObservation(Observation):
     is_stable: bool = True
     error: Optional[str] = None
 
+    # V2 multi-step fields
+    step_count: int = 0
+    max_steps: int = 1
+    current_creases: list[dict[str, Any]] = Field(default_factory=list)
+    anchor_points: list[list[float]] = Field(default_factory=list)
+    reward_breakdown: dict[str, float] = Field(default_factory=dict)
+
 
 class OrigamiState(State):
     """Internal state for an origami episode."""
 
     task_name: str = ""
+    mode: str = "single"  # "single" (V1) | "step" (V2)
+    step_count: int = 0
     shape_similarity: float = 0.0
     is_stable: bool = True
