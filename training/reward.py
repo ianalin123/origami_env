@@ -221,3 +221,70 @@ def flat_foldable_reward(completions: list, **kwargs: Any) -> list[float]:
             scores.append(0.0)
 
     return scores
+
+
+# ── V2 single-crease helpers ───────────────────────────────────────────────────
+
+
+def extract_crease_json(response: str) -> dict | None:
+    """Extract single-crease JSON from LLM response.
+
+    Looks for {"from": ..., "to": ..., "assignment": ...} object.
+    """
+    start = response.find("{")
+    end = response.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    raw = response[start : end + 1]
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    if not all(k in data for k in ("from", "to", "assignment")):
+        return None
+    return data
+
+
+def valid_crease(completions: list, **kwargs: Any) -> list[float]:
+    """V2 Reward: does the LLM output parse as a valid single-crease JSON?
+
+    +1.0  valid {"from": [x,y], "to": [x,y], "assignment": "M"|"V"}
+    -0.5  parseable JSON but missing required fields or wrong assignment value
+    -2.0  not parseable as JSON
+    """
+    scores = []
+    for completion in completions:
+        response = completion[0]["content"]
+        data = extract_crease_json(response)
+
+        if data is None:
+            scores.append(-2.0)
+            continue
+
+        from_pt = data.get("from", [])
+        to_pt = data.get("to", [])
+        assignment = data.get("assignment", "")
+
+        if (
+            not isinstance(from_pt, list) or len(from_pt) != 2
+            or not all(isinstance(v, (int, float)) for v in from_pt)
+        ):
+            scores.append(-0.5)
+            continue
+
+        if (
+            not isinstance(to_pt, list) or len(to_pt) != 2
+            or not all(isinstance(v, (int, float)) for v in to_pt)
+        ):
+            scores.append(-0.5)
+            continue
+
+        if assignment not in ("M", "V"):
+            scores.append(-0.5)
+            continue
+
+        scores.append(1.0)
+
+    return scores
