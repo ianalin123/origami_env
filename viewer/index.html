@@ -745,6 +745,97 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .section:nth-child(6) { animation-delay: 0.3s; }
 .section:nth-child(7) { animation-delay: 0.35s; }
 
+/* ── Try-it bar ──────────────────────────────────────────── */
+.try-bar {
+  padding: 12px 32px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.try-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.try-preset {
+  font-size: 12px;
+  font-family: inherit;
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.try-preset:hover { border-color: var(--border-hover); color: var(--text); }
+.try-preset.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+.try-submit {
+  font-size: 12px;
+  font-family: inherit;
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background: var(--text);
+  color: var(--surface);
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.15s;
+  margin-left: auto;
+}
+
+.try-submit:hover { opacity: 0.8; }
+.try-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.reward-pill {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.reward-pill.high { background: #eafaf1; border-color: #27ae60; color: #1e8449; }
+.reward-pill.mid  { background: #fef9e7; border-color: #e67e22; color: #d35400; }
+.reward-pill.low  { background: #fdedec; border-color: #c0392b; color: #922b21; }
+
+.try-json {
+  width: 100%;
+  padding: 0 32px 16px;
+  background: var(--surface);
+  display: none;
+}
+
+.try-json textarea {
+  width: 100%;
+  height: 110px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+}
+
+.try-json textarea:focus { border-color: var(--border-hover); }
+
 /* Responsive */
 @media (max-width: 680px) {
   header { padding: 20px 24px; }
@@ -1080,6 +1171,19 @@ tasks = requests.<span class="fn">get</span>(<span class="str">"http://localhost
       <div class="metric-label">Status</div>
       <div class="metric-value" id="m-status">&mdash;</div>
     </div>
+  </div>
+
+  <!-- Try-it bar -->
+  <div class="try-bar">
+    <span class="try-label">Test a fold</span>
+    <button class="try-preset" id="preset-bad"   onclick="loadPreset('bad')">❌ Bad attempt</button>
+    <button class="try-preset" id="preset-good"  onclick="loadPreset('good')">✓ Trained model</button>
+    <button class="try-preset" id="preset-custom" onclick="toggleCustomJSON()">{ } Custom JSON</button>
+    <button class="try-submit" id="try-submit-btn" onclick="submitCurrentFold()">Submit → score</button>
+    <div class="reward-pill" id="reward-pill"></div>
+  </div>
+  <div class="try-json" id="try-json-panel">
+    <textarea id="fold-json-input" spellcheck="false" placeholder='Paste FOLD JSON here...'></textarea>
   </div>
 </div>
 
@@ -1676,6 +1780,180 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// ─── TRY-IT PANEL ─────────────────────────────────────────────
+
+// Base URL: same-origin when served via Railway/uvicorn, localhost when file://
+const SERVER = location.protocol === 'file:' ? 'http://localhost:8000' : location.origin;
+
+// "Bad" folds: valid FOLD JSON but wrong geometry → low reward
+const BAD_FOLDS = {
+  triangle: {
+    vertices_coords: [[0,0],[1,0],[1,1],[0,1]],
+    edges_vertices:  [[0,1],[1,2],[2,3],[3,0],[0,2]],
+    edges_assignment: ['B','B','B','B','V'],
+    edges_foldAngle:  [0,0,0,0,45],           // 45° instead of 180° → partial fold
+    faces_vertices:  [[0,1,2],[0,2,3]],
+  },
+  half_fold: {
+    vertices_coords: [[0,0],[1,0],[1,1],[0,1],[0,0.25],[1,0.25]],
+    edges_vertices:  [[0,1],[1,5],[5,2],[2,3],[3,4],[4,0],[4,5]],
+    edges_assignment: ['B','B','B','B','B','B','V'],
+    edges_foldAngle:  [0,0,0,0,0,0,180],      // fold at y=0.25 not y=0.5
+    faces_vertices:  [[0,1,5,4],[4,5,2,3]],
+  },
+  quarter_fold: {
+    vertices_coords: [[0,0],[0.5,0],[1,0],[0,0.5],[0.5,0.5],[1,0.5],[0,1],[0.5,1],[1,1]],
+    edges_vertices:  [[0,1],[1,2],[2,5],[5,8],[8,7],[7,6],[6,3],[3,0],[1,4],[4,7],[3,4],[4,5]],
+    edges_assignment: ['B','B','B','B','B','B','B','B','V','V','V','V'],
+    edges_foldAngle:  [0,0,0,0,0,0,0,0,90,90,90,90],  // 90° not 180°
+    faces_vertices:  [[0,1,4,3],[1,2,5,4],[3,4,7,6],[4,5,8,7]],
+  },
+  letter_fold: {
+    vertices_coords: [[0,0],[1,0],[0,1/3],[1,1/3],[0,2/3],[1,2/3],[0,1],[1,1]],
+    edges_vertices:  [[0,1],[1,3],[3,5],[5,7],[7,6],[6,4],[4,2],[2,0],[2,3],[4,5]],
+    edges_assignment: ['B','B','B','B','B','B','B','B','V','V'],  // both V, not V+M
+    edges_foldAngle:  [0,0,0,0,0,0,0,0,180,180],
+    faces_vertices:  [[0,1,3,2],[2,3,5,4],[4,5,7,6]],
+  },
+};
+
+let activeFoldData = null;
+
+function loadPreset(type) {
+  const task = TASKS[currentTaskKey];
+  const data = type === 'good' ? task.fold : BAD_FOLDS[currentTaskKey];
+  activeFoldData = data;
+
+  // Show the JSON panel with the selected fold
+  document.getElementById('try-json-panel').style.display = 'block';
+  document.getElementById('fold-json-input').value = JSON.stringify(data, null, 2);
+
+  // Highlight active preset button
+  ['bad','good','custom'].forEach(id => {
+    document.getElementById('preset-' + id).classList.toggle('active', id === type);
+  });
+
+  // Clear previous reward
+  const pill = document.getElementById('reward-pill');
+  pill.style.display = 'none';
+}
+
+function toggleCustomJSON() {
+  const panel = document.getElementById('try-json-panel');
+  const isOpen = panel.style.display === 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen && activeFoldData) {
+    document.getElementById('fold-json-input').value = JSON.stringify(activeFoldData, null, 2);
+  }
+  ['bad','good'].forEach(id => document.getElementById('preset-' + id).classList.remove('active'));
+  document.getElementById('preset-custom').classList.toggle('active', !isOpen);
+}
+
+async function submitCurrentFold() {
+  const btn = document.getElementById('try-submit-btn');
+  const pill = document.getElementById('reward-pill');
+
+  // Parse JSON from textarea (or use activeFoldData)
+  let foldData;
+  try {
+    const raw = document.getElementById('fold-json-input').value.trim();
+    foldData = raw ? JSON.parse(raw) : activeFoldData;
+    if (!foldData) { alert('Select a preset or paste FOLD JSON first.'); return; }
+  } catch(e) {
+    pill.className = 'reward-pill low';
+    pill.style.display = 'flex';
+    pill.textContent = 'Invalid JSON';
+    return;
+  }
+
+  btn.textContent = 'Scoring…';
+  btn.disabled = true;
+  pill.style.display = 'none';
+
+  try {
+    // Create session → reset → step
+    const sid = (await (await fetch(`${SERVER}/sessions`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}'
+    })).json()).session_id;
+
+    await fetch(`${SERVER}/sessions/${sid}/reset`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ task_name: currentTaskKey }),
+    });
+
+    const stepRes = await fetch(`${SERVER}/sessions/${sid}/step`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ fold_data: foldData }),
+    });
+    const result = await stepRes.json();
+    const obs = result.observation || result;
+
+    const reward = obs.reward ?? 0;
+    const sim    = obs.shape_similarity ?? 0;
+    const err    = obs.error;
+
+    // Show reward pill
+    const level = reward >= 16 ? 'high' : reward >= 8 ? 'mid' : 'low';
+    pill.className = 'reward-pill ' + level;
+    pill.style.display = 'flex';
+    pill.textContent = err
+      ? `Error: ${err.slice(0,40)}`
+      : `reward ${reward.toFixed(2)} / 20  ·  ${Math.round(sim * 100)}% match`;
+
+    // Update similarity metric
+    const simEl = document.getElementById('m-sim');
+    simEl.textContent = Math.round(sim * 100) + '%';
+    simEl.className = 'metric-value ' + (sim > 0.9 ? 'high' : sim > 0.5 ? 'mid' : 'low');
+
+    // Update 3D view: render the submitted fold using returned positions
+    if (obs.final_positions && obs.final_positions.length > 0 && foldData.faces_vertices) {
+      renderPositions(foldData, obs.final_positions);
+    }
+
+  } catch(e) {
+    pill.className = 'reward-pill low';
+    pill.style.display = 'flex';
+    pill.textContent = 'Server unreachable — start uvicorn locally';
+  }
+
+  btn.textContent = 'Submit → score';
+  btn.disabled = false;
+}
+
+function renderPositions(foldData, finalPositions) {
+  if (!detailScene) return;
+  if (detailMeshGroup) detailScene.remove(detailMeshGroup);
+
+  const n = finalPositions.length;
+  const posArr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    posArr[i*3] = finalPositions[i][0];
+    posArr[i*3+1] = finalPositions[i][1];
+    posArr[i*3+2] = finalPositions[i][2];
+  }
+
+  const indices = [];
+  for (const face of foldData.faces_vertices) {
+    for (let i = 1; i < face.length - 1; i++) indices.push(face[0], face[i], face[i+1]);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  const mat = new THREE.MeshPhongMaterial({ color: 0xf5f3f0, side: THREE.DoubleSide, shininess: 30 });
+  const mesh = new THREE.Mesh(geo, mat);
+
+  // Center it
+  const box = new THREE.Box3().setFromObject(mesh);
+  mesh.position.sub(box.getCenter(new THREE.Vector3()));
+
+  detailMeshGroup = new THREE.Group();
+  detailMeshGroup.add(mesh);
+  detailScene.add(detailMeshGroup);
+}
 
 // ─── WEBSOCKET (optional live connection) ─────────────────────
 
