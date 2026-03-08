@@ -20,7 +20,7 @@ class OrigamiEnv(EnvClient[OrigamiAction, OrigamiObservation, OrigamiState]):
     """
 
     def _step_payload(self, action: OrigamiAction) -> Dict[str, Any]:
-        return action.model_dump()
+        return {k: v for k, v in action.model_dump().items() if v is not None}
 
     def _parse_result(self, payload: Dict[str, Any]) -> StepResult[OrigamiObservation]:
         obs_data = payload.get("observation", payload)
