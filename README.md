@@ -1,15 +1,3 @@
----
-title: Origami Env Environment Server
-emoji: 🦢
-colorFrom: red
-colorTo: indigo
-sdk: docker
-pinned: false
-app_port: 8000
-tags:
-  - openenv
----
-
 # Origami Env
 
 RL environment for origami folding — LLM generates FOLD crease patterns, physics simulates them, reward = shape similarity to target.
@@ -20,7 +8,7 @@ RL environment for origami folding — LLM generates FOLD crease patterns, physi
 from origami_env.client import OrigamiEnv
 from origami_env.models import OrigamiAction
 
-with OrigamiEnv(base_url="http://localhost:8000") as env:
+with OrigamiEnv(base_url="https://origami-env-production.up.railway.app") as env:
     result = env.reset(task_name="triangle")
     result = env.step(OrigamiAction(fold_data={
         "vertices_coords": [[0,0],[1,0],[1,1],[0,1]],

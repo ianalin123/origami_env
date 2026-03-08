@@ -1,6 +1,0 @@
-spec_version: 1
-name: origami_env
-type: space
-runtime: fastapi
-app: origami_server.app:app
-port: 8000

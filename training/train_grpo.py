@@ -55,15 +55,27 @@ def build_prompt(task: dict) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="GRPO training for origami RL")
-    parser.add_argument("--task", default="triangle", help="Task name")
+    parser.add_argument(
+        "--task", default="all",
+        help="Comma-separated task names, or 'all' for all tasks",
+    )
     parser.add_argument("--max_steps", type=int, default=600)
     parser.add_argument("--num_generations", type=int, default=2)
-    parser.add_argument("--model", default="unsloth/Qwen3-14B")
+    parser.add_argument("--model", default="unsloth/Qwen2.5-3B-Instruct")
     parser.add_argument("--lr", type=float, default=2e-4)
-    parser.add_argument("--lora_rank", type=int, default=4)
+    parser.add_argument("--lora_rank", type=int, default=8)
+    parser.add_argument(
+        "--load_in_4bit", action=argparse.BooleanOptionalAction, default=True,
+        help="4-bit quantization (--load_in_4bit / --no-load_in_4bit). "
+             "Disable on B200/H100 where full bfloat16 fits in VRAM.",
+    )
     parser.add_argument(
         "--server", default="http://localhost:8000",
         help="URL of the origami environment server",
+    )
+    parser.add_argument(
+        "--resume", action="store_true", default=False,
+        help="Resume from latest checkpoint in OUTPUT_DIR",
     )
     args = parser.parse_args()
 
@@ -79,9 +91,12 @@ def main():
         raise SystemExit(1)
 
     # --- Get task info from server ---
-    task = requests.get(f"{args.server}/tasks/{args.task}").json()
-    prompt_text = build_prompt(task)
-    print(f"Task: {task['name']} — {task['description']}")
+    ALL_TASKS = ["triangle", "half_fold", "quarter_fold", "letter_fold"]
+    task_names = ALL_TASKS if args.task == "all" else [t.strip() for t in args.task.split(",")]
+    tasks = {}
+    for name in task_names:
+        tasks[name] = requests.get(f"{args.server}/tasks/{name}").json()
+        print(f"Task: {tasks[name]['name']} — {tasks[name]['description']}")
 
     # --- Configure reward functions (OpenEnv pattern) ---
     from client import OrigamiEnv
@@ -90,7 +105,9 @@ def main():
     from unsloth import is_port_open, launch_openenv
 
     global port, openenv_process
-    port = int(args.server.split(":")[-1]) if ":" in args.server else 8000
+    from urllib.parse import urlparse as _urlparse
+    _parsed = _urlparse(args.server)
+    port = _parsed.port or (443 if _parsed.scheme == "https" else 8000)
     openenv_process = None
 
     launch_openenv = functools.partial(
@@ -101,10 +118,10 @@ def main():
         openenv_class=OrigamiEnv,
     )
 
-    def shape_match_reward(completions, **kwargs):
+    def shape_match_reward(completions, task_name, **kwargs):
         global port, openenv_process
         scores = []
-        for completion in completions:
+        for completion, tname in zip(completions, task_name):
             response = completion[0]["content"]
             fold_data = extract_fold_json(response)
             if fold_data is None:
@@ -112,21 +129,32 @@ def main():
                 continue
             try:
                 port, openenv_process = launch_openenv(port, openenv_process)
-                openenv_process.reset(task_name=args.task)
+                openenv_process.reset(task_name=tname)
                 result = openenv_process.step(OrigamiAction(fold_data=fold_data))
                 scores.append(result.reward if result.reward is not None else 0.0)
             except TimeoutError:
                 scores.append(-1.0)
             except Exception:
-                scores.append(-3.0)
+                scores.append(-2.0)
         return scores
 
     # --- Build dataset (same prompt repeated, like 2048) ---
     from datasets import Dataset
 
-    dataset = Dataset.from_list(
-        [{"prompt": [{"role": "user", "content": prompt_text}]}] * 1000
-    )
+    # Mix all tasks evenly. task_name column is passed to reward functions by TRL.
+    # /no_think disables Qwen3 chain-of-thought so completions are pure JSON.
+    samples_per_task = 200
+    rows = []
+    for tname, tinfo in tasks.items():
+        prompt_text = build_prompt(tinfo)
+        rows.extend([{
+            "prompt": [
+                {"role": "system", "content": "/no_think"},
+                {"role": "user", "content": prompt_text},
+            ],
+            "task_name": tname,
+        }] * samples_per_task)
+    dataset = Dataset.from_list(rows)
 
     # --- Load model with QLoRA ---
     try:
@@ -135,15 +163,15 @@ def main():
     except ImportError:
         USE_UNSLOTH = False
 
-    max_seq_length = 768  # FOLD JSON is compact
+    max_seq_length = 1024  # no thinking mode; JSON output is ~150-300 tokens
 
+    quant_label = "4-bit QLoRA" if args.load_in_4bit else "bfloat16 LoRA"
     if USE_UNSLOTH:
-        print(f"Loading {args.model} with Unsloth QLoRA (rank={args.lora_rank})...")
+        print(f"Loading {args.model} with Unsloth {quant_label} (rank={args.lora_rank})...")
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=args.model,
-            load_in_4bit=True,
+            load_in_4bit=args.load_in_4bit,
             max_seq_length=max_seq_length,
-            offload_embedding=True,  # Needed for 14B on limited VRAM
         )
         model = FastLanguageModel.get_peft_model(
             model,
@@ -165,7 +193,7 @@ def main():
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=torch.bfloat16,
-        ) if torch.cuda.is_available() else None
+        ) if (args.load_in_4bit and torch.cuda.is_available()) else None
 
         tokenizer = AutoTokenizer.from_pretrained(args.model)
         model = AutoModelForCausalLM.from_pretrained(
@@ -206,7 +234,7 @@ def main():
         max_prompt_length=512,
         max_completion_length=max_seq_length - 512,
         max_steps=args.max_steps,
-        save_steps=100,
+        save_steps=10,
         output_dir=os.environ.get("OUTPUT_DIR", "outputs"),
     )
 
@@ -218,13 +246,16 @@ def main():
         train_dataset=dataset,
     )
 
-    print(f"Training: {args.max_steps} steps, {args.num_generations} generations/step")
-    trainer.train()
+    resume_from = args.resume or None  # True → latest ckpt, None → scratch
+    print(f"Training: {args.max_steps} steps, {args.num_generations} generations/step"
+          + (" (resuming)" if resume_from else ""))
+    trainer.train(resume_from_checkpoint=resume_from)
 
     # Save LoRA adapter
+    run_label = args.task.replace(",", "-").replace(" ", "")
     save_path = os.path.join(
         os.environ.get("OUTPUT_DIR", "outputs"),
-        f"origami-{args.task}-lora-final",
+        f"origami-{run_label}-lora-final",
     )
     model.save_pretrained(save_path)
     tokenizer.save_pretrained(save_path)

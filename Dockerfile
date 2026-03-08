@@ -11,6 +11,4 @@ COPY . /app
 
 ENV MAX_CONCURRENT_ENVS=16
 
-EXPOSE 8000
-
-CMD ["uvicorn", "origami_server.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn origami_server.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

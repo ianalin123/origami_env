@@ -13,13 +13,10 @@ class OrigamiEnv(EnvClient[OrigamiAction, OrigamiObservation, OrigamiState]):
     Client for the origami RL environment.
 
     Example:
-        >>> with OrigamiEnv(base_url="http://localhost:8000") as env:
+        >>> with OrigamiEnv(base_url="https://origami-env-production.up.railway.app") as env:
         ...     result = env.reset(task_name="triangle")
         ...     result = env.step(OrigamiAction(fold_data={...}))
         ...     print(result.observation.shape_similarity)
-
-        >>> # From HuggingFace Spaces
-        >>> env = OrigamiEnv.from_env("username/origami_env")
     """
 
     def _step_payload(self, action: OrigamiAction) -> Dict[str, Any]:
