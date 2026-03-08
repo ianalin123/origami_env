@@ -60,7 +60,7 @@ image = (
         #   pip install 'unsloth[cu128-blackwell-torch270]'
         "pip install -q unsloth unsloth_zoo",
         # Env server
-        "pip install -q fastapi uvicorn requests numpy scipy pydantic 'openenv-core[core]>=0.2.1'",
+        "pip install -q fastapi uvicorn requests numpy scipy shapely pydantic 'openenv-core[core]>=0.2.1'",
     )
     .env({"PYTHONPATH": "/app"})            # must precede add_local_dir
     .add_local_dir(                         # copy=True bakes into image layer
