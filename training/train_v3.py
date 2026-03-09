@@ -194,12 +194,14 @@ def main():
     parser.add_argument("--model", default="unsloth/Qwen2.5-3B-Instruct")
     parser.add_argument("--max-steps", type=int, default=1500)
     parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--num-per-task", type=int, default=4,
+                        help="Number of episodes per task (GRPO needs >=4 for reward variance)")
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--clip-range", type=float, default=0.2)
     parser.add_argument("--kl-coef", type=float, default=0.1)
     parser.add_argument("--max-kl-per-token", type=float, default=0.5)
-    parser.add_argument("--temperature", type=float, default=0.7)
+    parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
     parser.add_argument("--tasks", default="auto",
@@ -299,6 +301,7 @@ def main():
             generate_fn=generate_fn,
             task_pool=task_pool,
             batch_size=args.batch_size,
+            num_per_task=args.num_per_task,
         )
 
         # 3. Compute GiGPO advantages

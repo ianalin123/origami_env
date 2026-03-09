@@ -13,6 +13,7 @@ def run_rollout_batch(
     generate_fn: Callable[[list[str]], list[str]],
     task_pool: list[str],
     batch_size: int = 16,
+    num_per_task: int = 0,
 ) -> list[Trajectory]:
     """Run a batch of multi-step episodes, return trajectories.
 
@@ -20,10 +21,20 @@ def run_rollout_batch(
         generate_fn: takes list of prompt strings, returns list of completion strings.
                      During training this wraps vLLM/sglang; for testing use a mock.
         task_pool: list of task names to sample from
-        batch_size: number of parallel episodes
+        batch_size: number of parallel episodes (used when num_per_task=0)
+        num_per_task: if >0, run exactly this many episodes per task in pool.
+                      Total episodes = len(task_pool) * num_per_task.
+                      This ensures enough samples per task for GRPO advantage variance.
     """
+    if num_per_task > 0:
+        tasks = []
+        for t in task_pool:
+            tasks.extend([t] * num_per_task)
+        batch_size = len(tasks)
+    else:
+        tasks = [random.choice(task_pool) for _ in range(batch_size)]
+
     pool = OrigamiEnvPool(pool_size=batch_size)
-    tasks = [random.choice(task_pool) for _ in range(batch_size)]
     task_infos = {t: get_task(t) for t in set(tasks)}
 
     # Reset all envs
