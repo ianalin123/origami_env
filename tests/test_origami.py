@@ -583,3 +583,94 @@ class TestRollout:
         advantages = compute_gigpo_advantages(trajs, alpha=0.5)
         assert len(advantages) == 8
         assert all(len(a) == 1 for a in advantages)
+
+
+class TestTrainV3Components:
+    """Test V3 training loop components (no GPU required)."""
+
+    def test_generate_fn_interface(self):
+        """Verify generate_fn accepts list[str], returns list[str]."""
+        # Mock the interface that train_v3.build_generate_fn produces
+        def mock_generate(prompts: list[str]) -> list[str]:
+            return ['{"from": [0,0], "to": [1,1], "assignment": "V"}'] * len(prompts)
+
+        prompts = ["test prompt 1", "test prompt 2"]
+        results = mock_generate(prompts)
+        assert len(results) == len(prompts)
+        assert all(isinstance(r, str) for r in results)
+
+    def test_full_pipeline_mock(self):
+        """Full training pipeline: rollout → GiGPO → advantage shapes."""
+        from training.curriculum import get_task_pool
+        from training.gigpo import GiGPORewardManager
+        from training.rollout import run_rollout_batch
+
+        def mock_gen(prompts):
+            return ['{"from": [0.5,0], "to": [0.5,1], "assignment": "V"}'] * len(prompts)
+
+        task_pool = get_task_pool(0)
+        assert "triangle" in task_pool
+
+        trajs = run_rollout_batch(
+            generate_fn=mock_gen,
+            task_pool=task_pool,
+            batch_size=4,
+        )
+
+        manager = GiGPORewardManager(alpha_start=1.0, alpha_end=0.3, total_steps=100)
+        advantages = manager.compute_advantages(trajs)
+
+        assert len(advantages) == 4
+        for i, traj in enumerate(trajs):
+            assert len(advantages[i]) == traj.length
+
+        manager.step()
+        assert manager.global_step == 1
+
+    def test_curriculum_progression(self):
+        """Curriculum returns different task pools at different steps."""
+        from training.curriculum import get_task_pool
+
+        early = get_task_pool(0)
+        mid = get_task_pool(300)
+        late = get_task_pool(1000)
+
+        assert "triangle" in early
+        assert "quarter_fold" in mid
+        assert "waterbomb_base" in late
+        assert len(late) <= len(mid) or "map_fold" in late
+
+    def test_reward_manager_alpha_schedule(self):
+        """Alpha anneals from 1.0 to 0.3 over training."""
+        from training.gigpo import GiGPORewardManager
+
+        mgr = GiGPORewardManager(
+            alpha_start=1.0, alpha_end=0.3,
+            warmup_steps=10, total_steps=100,
+        )
+        assert mgr.alpha == 1.0
+
+        for _ in range(10):
+            mgr.step()
+        assert mgr.alpha == 1.0  # still in warmup
+
+        for _ in range(90):
+            mgr.step()
+        assert abs(mgr.alpha - 0.3) < 0.01  # annealed to end
+
+    def test_multistep_rollout_quarter_fold(self):
+        """Quarter fold requires 2 steps — verify trajectory length."""
+        from training.rollout import run_rollout_batch
+
+        step_count = [0]
+        def mock_gen(prompts):
+            step_count[0] += 1
+            return ['{"from": [0.5,0], "to": [0.5,1], "assignment": "V"}'] * len(prompts)
+
+        trajs = run_rollout_batch(
+            generate_fn=mock_gen,
+            task_pool=["quarter_fold"],
+            batch_size=2,
+        )
+        assert all(t.length == 2 for t in trajs)
+        assert step_count[0] == 2  # generate_fn called twice
