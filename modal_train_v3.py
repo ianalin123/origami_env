@@ -67,7 +67,7 @@ def train(
     lora_rank: int = 32,
     load_in_4bit: bool = False,
     resume: bool = False,
-    lr: float = 2e-4,
+    lr: float = 5e-5,
 ):
     os.environ["OUTPUT_DIR"] = OUTPUTS_DIR
 
@@ -112,7 +112,7 @@ def main(
     lora_rank: int = 32,
     load_in_4bit: bool = False,
     resume: bool = False,
-    lr: float = 2e-4,
+    lr: float = 5e-5,
 ):
     train.remote(
         max_steps=max_steps,
