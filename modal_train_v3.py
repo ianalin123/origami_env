@@ -70,6 +70,7 @@ def train(
     lr: float = 5e-5,
     noise_scale: float = 1.5,
     temperature: float = 1.5,
+    top_k: int = 0,
 ):
     os.environ["OUTPUT_DIR"] = OUTPUTS_DIR
 
@@ -85,6 +86,7 @@ def train(
             "--lora-rank", str(lora_rank),
             "--noise-scale", str(noise_scale),
             "--temperature", str(temperature),
+            "--top-k", str(top_k),
             "--tasks", tasks,
             "--output-dir", OUTPUTS_DIR,
             "--save-steps", "50",
@@ -119,6 +121,7 @@ def main(
     lr: float = 5e-5,
     noise_scale: float = 1.5,
     temperature: float = 1.5,
+    top_k: int = 0,
 ):
     train.remote(
         max_steps=max_steps,
@@ -131,4 +134,5 @@ def main(
         lr=lr,
         noise_scale=noise_scale,
         temperature=temperature,
+        top_k=top_k,
     )

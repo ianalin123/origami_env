@@ -45,7 +45,7 @@ class ExplorationNoiseProcessor(LogitsProcessor):
 
 
 def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128,
-                      noise_scale=3.0):
+                      noise_scale=3.0, top_k=0):
     """Wrap model.generate() to match rollout's expected interface."""
     logits_processor = LogitsProcessorList([
         ExplorationNoiseProcessor(noise_scale=noise_scale),
@@ -78,6 +78,8 @@ def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128,
             do_sample=True,
             pad_token_id=tokenizer.pad_token_id,
         )
+        if top_k > 0:
+            gen_kwargs["top_k"] = top_k
         if logits_processor:
             gen_kwargs["logits_processor"] = logits_processor
 
@@ -241,6 +243,8 @@ def main():
     parser.add_argument("--temperature", type=float, default=1.5)
     parser.add_argument("--noise-scale", type=float, default=1.5,
                         help="Gaussian noise added to logits for exploration (0=disabled)")
+    parser.add_argument("--top-k", type=int, default=0,
+                        help="Top-k sampling to force token diversity (0=disabled)")
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
     parser.add_argument("--tasks", default="auto",
@@ -337,6 +341,7 @@ def main():
             temperature=args.temperature,
             max_new_tokens=128,
             noise_scale=args.noise_scale,
+            top_k=args.top_k,
         )
 
         trajectories = run_rollout_batch(
