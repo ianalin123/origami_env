@@ -15,7 +15,7 @@ from pathlib import Path
 import modal
 
 APP_NAME = "origami-v3-train"
-GPU = "B200"
+GPU = "A100-80GB"
 TIMEOUT = 6 * 3600  # 6h ceiling
 OUTPUTS_DIR = "/outputs"
 
