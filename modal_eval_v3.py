@@ -22,7 +22,7 @@ ALL_TASKS = ["triangle", "half_fold", "quarter_fold", "letter_fold", "waterbomb_
 
 @app.function(
     image=image,
-    gpu="B200",
+    gpu="A100-80GB",
     timeout=3600,
     volumes={OUTPUTS_DIR: volume},
 )
@@ -137,14 +137,16 @@ def evaluate(
                     break
 
             final_progress = 0.0
+            got_completion = False
             if obs.reward_breakdown:
                 final_progress = obs.reward_breakdown.get("progress", 0)
+                got_completion = obs.reward_breakdown.get("completion", 0) > 0
 
             episodes.append({
                 "total_reward": ep_reward,
                 "steps": steps,
                 "n_steps": len(steps),
-                "completed": final_progress > 0.9,
+                "completed": got_completion,
                 "final_progress": final_progress,
             })
 
