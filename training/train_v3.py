@@ -321,6 +321,11 @@ def main():
                 f"{k}:{np.mean(v):.2f}" for k, v in sorted(task_rewards.items())
             )
 
+            # Advantage diagnostics
+            flat_advs = [a for adv_list in advantages for a in adv_list]
+            adv_nonzero = sum(1 for a in flat_advs if abs(a) > 1e-10)
+            adv_std = float(np.std(flat_advs)) if flat_advs else 0.0
+
             print(
                 f"step {global_step + 1}/{args.max_steps}  "
                 f"loss={loss.item():.4f}  "
@@ -328,6 +333,8 @@ def main():
                 f"max={max_reward:.2f}  "
                 f"len={mean_length:.1f}  "
                 f"complete={completion_rate:.0f}%  "
+                f"adv_nz={adv_nonzero}/{len(flat_advs)}  "
+                f"adv_std={adv_std:.3f}  "
                 f"alpha={reward_manager.alpha:.2f}  "
                 f"kl={metrics['mean_kl']:.4f}  "
                 f"tasks=[{task_summary}]  "
