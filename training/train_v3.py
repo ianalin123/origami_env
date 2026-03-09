@@ -132,14 +132,6 @@ def compute_log_probs(model, tokenizer, prompt: str, completion: str) -> tuple[t
     return token_log_probs.sum(), n_tokens
 
 
-def compute_ref_log_probs(model, tokenizer, prompt: str, completion: str) -> tuple[torch.Tensor, int]:
-    """Compute log probs under base model (LoRA disabled) for KL penalty."""
-    with torch.no_grad():
-        model.disable_adapter_layers()
-        ref_lp, n_tokens = compute_log_probs(model, tokenizer, prompt, completion)
-        model.enable_adapter_layers()
-        return ref_lp, n_tokens
-
 
 def policy_loss(
     model,
@@ -155,44 +147,64 @@ def policy_loss(
     For LoRA models, reference log probs are computed by disabling the adapter.
     KL is normalized per-token for fair comparison across completion lengths.
     Steps where per-token KL > max_kl_per_token are skipped.
+
+    Optimized: toggles LoRA adapter only once (not per-step) and pre-filters
+    zero-advantage steps to avoid unnecessary forward passes.
     """
     device = next(model.parameters()).device
-    losses = []
-    total_kl = 0.0
-    n_steps = 0
-    n_kl_skipped = 0
 
+    # 1. Collect all steps with non-zero advantages
+    step_items = []
     for i, traj in enumerate(trajectories):
         for t, step in enumerate(traj.steps):
             adv = advantages[i][t]
             if abs(adv) < 1e-10:
                 continue
+            step_items.append((step.prompt, step.completion, adv))
 
-            log_prob, n_tokens = compute_log_probs(model, tokenizer, step.prompt, step.completion)
-            ref_log_prob, _ = compute_ref_log_probs(model, tokenizer, step.prompt, step.completion)
+    if not step_items:
+        return (
+            torch.tensor(0.0, device=device, requires_grad=False),
+            {"n_steps": 0, "mean_kl_per_token": 0.0, "kl_skipped": 0},
+        )
 
-            if n_tokens == 0:
-                continue
+    # 2. Pre-compute ALL reference log probs (adapter disabled once)
+    ref_data = []
+    with torch.no_grad():
+        model.disable_adapter_layers()
+        for prompt, completion, _ in step_items:
+            ref_lp, n_tokens = compute_log_probs(model, tokenizer, prompt, completion)
+            ref_data.append((ref_lp.item(), n_tokens))
+        model.enable_adapter_layers()
 
-            # Per-token KL divergence
-            kl_total = log_prob - ref_log_prob
-            kl_per_token = kl_total / n_tokens
+    # 3. Compute policy log probs and loss (adapter enabled, with gradients)
+    losses = []
+    total_kl = 0.0
+    n_steps = 0
+    n_kl_skipped = 0
 
-            kl_pt_val = kl_per_token.detach().item()
-            if abs(kl_pt_val) > max_kl_per_token:
-                n_kl_skipped += 1
-                continue
+    for idx, (prompt, completion, adv) in enumerate(step_items):
+        ref_lp_val, n_tokens = ref_data[idx]
+        if n_tokens == 0:
+            continue
 
-            total_kl += abs(kl_pt_val)
+        log_prob, _ = compute_log_probs(model, tokenizer, prompt, completion)
 
-            # Policy gradient: -advantage * mean_log_prob (normalized by length)
-            # KL penalty: kl_coef * per_token_kl (gradient-carrying)
-            adv_tensor = torch.tensor(adv, device=device, dtype=log_prob.dtype)
-            mean_log_prob = log_prob / n_tokens
-            step_loss = -(adv_tensor * mean_log_prob) + kl_coef * kl_per_token
+        kl_per_token = (log_prob.detach().item() - ref_lp_val) / n_tokens
+        if abs(kl_per_token) > max_kl_per_token:
+            n_kl_skipped += 1
+            continue
 
-            losses.append(step_loss)
-            n_steps += 1
+        total_kl += abs(kl_per_token)
+
+        adv_tensor = torch.tensor(adv, device=device, dtype=log_prob.dtype)
+        mean_log_prob = log_prob / n_tokens
+        ref_lp_tensor = torch.tensor(ref_lp_val, device=device, dtype=log_prob.dtype)
+        kl_term = (log_prob - ref_lp_tensor) / n_tokens
+        step_loss = -(adv_tensor * mean_log_prob) + kl_coef * kl_term
+
+        losses.append(step_loss)
+        n_steps += 1
 
     if losses:
         total_loss = torch.stack(losses).mean()
