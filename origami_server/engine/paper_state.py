@@ -162,3 +162,14 @@ class PaperState:
             x2, y2 = self.graph.vertices[v2]
             result.append({'v1': (x1, y1), 'v2': (x2, y2), 'assignment': assignment})
         return result
+
+
+def hash_paper_state(state: PaperState) -> int:
+    edges = state.crease_edges()
+    canonical = []
+    for e in edges:
+        p1 = tuple(round(c, 6) for c in e["v1"])
+        p2 = tuple(round(c, 6) for c in e["v2"])
+        canonical.append((min(p1, p2), max(p1, p2), e["assignment"]))
+    canonical.sort()
+    return hash(tuple(canonical))

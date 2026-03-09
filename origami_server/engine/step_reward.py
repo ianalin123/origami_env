@@ -7,6 +7,8 @@ import numpy as np
 from .graph import CreaseGraph
 from .paper_state import PaperState
 
+COMPLETION_BONUS = {1: 2.0, 2: 5.0, 3: 10.0, 4: 15.0}
+
 
 def _compute_sector_angles(vertex_id: int, graph: CreaseGraph) -> list[float]:
     """Compute consecutive sector angles (CCW) at a vertex from its cyclic edges."""
@@ -344,7 +346,9 @@ def compute_reward(
         and r['maekawa'] == 1.0
         and r['blb'] == 1.0
     )
-    r['completion'] = 10.0 if (r['progress'] > 0.9 and all_valid) else 0.0
+    difficulty = target.get("difficulty", 1)
+    bonus = COMPLETION_BONUS.get(difficulty, 10.0)
+    r['completion'] = bonus if (r['progress'] > 0.9 and all_valid) else 0.0
 
     # LEVEL 6: Efficiency — escalating step cost
     r['efficiency'] = -0.01 * (1 + step / max_steps)
