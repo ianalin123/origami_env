@@ -201,7 +201,7 @@ def main():
     parser.add_argument("--clip-range", type=float, default=0.2)
     parser.add_argument("--kl-coef", type=float, default=0.1)
     parser.add_argument("--max-kl-per-token", type=float, default=0.5)
-    parser.add_argument("--temperature", type=float, default=1.0)
+    parser.add_argument("--temperature", type=float, default=1.5)
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
     parser.add_argument("--tasks", default="auto",

@@ -454,7 +454,7 @@ class TestPromptBuilder:
         env = OrigamiEnvironment()
         obs = env.reset(task_name="triangle")
         task_info = get_task("triangle")
-        prompt = build_prompt_from_obs("triangle", task_info, obs)
+        prompt = build_prompt_from_obs("triangle", task_info, obs, randomize=False)
         assert "triangle" in prompt.lower() or "diagonal" in prompt.lower()
         assert "(0,0)" in prompt or "(0.0,0.0)" in prompt
 
@@ -467,8 +467,18 @@ class TestPromptBuilder:
         # obs2 should have current_creases populated (the env records them)
         # We just verify the prompt builder doesn't crash with real data
         task_info = get_task("quarter_fold")
-        prompt = build_prompt_from_obs("quarter_fold", task_info, obs)
-        assert "step 0" in prompt or "step 0 of" in prompt
+        prompt = build_prompt_from_obs("quarter_fold", task_info, obs, randomize=False)
+        assert "step 0" in prompt.lower()
+
+    def test_prompt_perturbation_produces_diversity(self):
+        env = OrigamiEnvironment()
+        obs = env.reset(task_name="triangle")
+        task_info = get_task("triangle")
+        prompts = set()
+        for _ in range(20):
+            p = build_prompt_from_obs("triangle", task_info, obs, randomize=True)
+            prompts.add(p)
+        assert len(prompts) >= 3, f"Expected >=3 unique prompts from 20 samples, got {len(prompts)}"
 
 
 class TestExtractCreaseJson:

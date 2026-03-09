@@ -1,6 +1,9 @@
+import random
+
 from origami_server.models import OrigamiObservation
 
-STEP_PROMPT = """You are an origami designer. Add the next fold crease.
+TEMPLATES = [
+    """You are an origami designer. Add the next fold crease.
 
 Target: {description}
 Paper: {width} x {height} unit square
@@ -17,13 +20,72 @@ Flat-foldability rules at every interior vertex:
   - BLB: smallest sector bounded by opposite M/V types
 
 Output ONLY this JSON (no explanation):
-{{"from": [x1, y1], "to": [x2, y2], "assignment": "M" or "V"}}"""
+{{"from": [x1, y1], "to": [x2, y2], "assignment": "M" or "V"}}""",
+
+    """Fold a piece of paper. Place one crease line for this step.
+
+Goal: {description}
+Sheet dimensions: {width} x {height}
+
+Progress (step {step}/{max_folds}):
+  Existing creases: {crease_history}
+
+Points you can use:
+  {anchor_points}
+
+Rules for flat-foldability:
+  - Kawasaki theorem: alternating angles around any interior vertex sum to 180°
+  - Maekawa theorem: |M - V| = 2 at each interior vertex
+  - Big-Little-Big: smallest angle sector bounded by opposite fold types
+
+Respond with ONLY this JSON:
+{{"from": [x1, y1], "to": [x2, y2], "assignment": "M" or "V"}}""",
+
+    """You are folding origami. Choose the next crease to add.
+
+Task: {description}
+Paper size: {width} x {height}
+
+Step {step} of {max_folds}:
+  Current creases: {crease_history}
+
+Available points:
+  {anchor_points}
+
+Constraints (flat-foldability):
+  - Kawasaki: alternate sector angles sum to π each side
+  - Maekawa: mountain and valley count differ by exactly 2
+  - BLB: smallest sector angle flanked by opposite assignments
+
+Return ONLY JSON:
+{{"from": [x1, y1], "to": [x2, y2], "assignment": "M" or "V"}}""",
+
+    """Design the next origami fold crease.
+
+Objective: {description}
+Paper: {width} × {height} square
+
+State (step {step}/{max_folds}):
+  Creases so far: {crease_history}
+
+Anchor points available:
+  {anchor_points}
+
+Flat-foldability constraints at interior vertices:
+  - Kawasaki: alternating sector angles each sum to 180°
+  - Maekawa: |mountain - valley| = 2
+  - BLB: smallest sector bounded by opposite types
+
+Output JSON only:
+{{"from": [x1, y1], "to": [x2, y2], "assignment": "M" or "V"}}""",
+]
 
 
 def build_prompt_from_obs(
     task_name: str,
     task_info: dict,
     obs: OrigamiObservation,
+    randomize: bool = True,
 ) -> str:
     w = task_info["paper"]["width"]
     h = task_info["paper"]["height"]
@@ -38,9 +100,13 @@ def build_prompt_from_obs(
         crease_history = "none"
 
     anchors = [f"({p[0]},{p[1]})" for p in obs.anchor_points]
+    if randomize:
+        random.shuffle(anchors)
     anchor_str = "  ".join(anchors)
 
-    return STEP_PROMPT.format(
+    template = random.choice(TEMPLATES) if randomize else TEMPLATES[0]
+
+    return template.format(
         description=task_info["description"],
         width=w,
         height=h,
