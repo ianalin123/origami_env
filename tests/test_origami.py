@@ -186,7 +186,7 @@ class TestEnvironment:
 
 class TestTasks:
     def test_four_tasks(self):
-        assert len(list_tasks()) == 4
+        assert len(list_tasks()) == 6
 
     def test_get_task(self):
         task = get_task("triangle")
@@ -260,7 +260,7 @@ class TestAPI:
         tasks = r.json()
         assert "triangle" in tasks
         assert "half_fold" in tasks
-        assert len(tasks) == 4
+        assert len(tasks) == 6
 
     def test_task_detail_endpoint(self, client):
         r = client.get("/tasks/triangle")
@@ -287,7 +287,7 @@ class TestAPI:
             assert resp["data"]["done"] is True
 
     def test_websocket_all_tasks(self, client):
-        for task_name in ("triangle", "half_fold", "quarter_fold", "letter_fold"):
+        for task_name in ("triangle", "half_fold", "quarter_fold", "letter_fold", "waterbomb_base", "map_fold"):
             r = client.get(f"/tasks/{task_name}")
             fold_data = r.json()["target_fold"]
             with client.websocket_connect("/ws") as ws:
@@ -296,3 +296,290 @@ class TestAPI:
                 ws.send_json({"type": "step", "data": {"fold_data": fold_data}})
                 resp = ws.receive_json()
                 assert resp["data"]["reward"] == 20.0, f"{task_name} failed"
+
+
+# --- V3 Multi-Step RL Tests ---
+
+from origami_server.engine.paper_state import PaperState, hash_paper_state
+from training.trajectory import Step, Trajectory
+from training.curriculum import get_task_pool
+from training.env_pool import OrigamiEnvPool
+from training.gigpo import compute_gigpo_advantages, GiGPORewardManager
+from training.prompt_builder import build_prompt_from_obs
+from training.reward import extract_crease_json, valid_crease
+from origami_server.engine.step_reward import COMPLETION_BONUS
+
+
+class TestPaperStateHash:
+    def test_empty_papers_same_hash(self):
+        s1, s2 = PaperState(), PaperState()
+        assert hash_paper_state(s1) == hash_paper_state(s2)
+
+    def test_same_creases_different_order(self):
+        s1 = PaperState()
+        s1.add_crease([0.5, 0], [0.5, 1], "V")
+        s1.add_crease([0, 0.5], [1, 0.5], "V")
+        s2 = PaperState()
+        s2.add_crease([0, 0.5], [1, 0.5], "V")
+        s2.add_crease([0.5, 0], [0.5, 1], "V")
+        assert hash_paper_state(s1) == hash_paper_state(s2)
+
+    def test_different_creases_different_hash(self):
+        s1 = PaperState()
+        s1.add_crease([0, 0], [1, 1], "V")
+        s2 = PaperState()
+        s2.add_crease([1, 0], [0, 1], "V")
+        assert hash_paper_state(s1) != hash_paper_state(s2)
+
+    def test_different_assignment_different_hash(self):
+        s1 = PaperState()
+        s1.add_crease([0.5, 0], [0.5, 1], "V")
+        s2 = PaperState()
+        s2.add_crease([0.5, 0], [0.5, 1], "M")
+        assert hash_paper_state(s1) != hash_paper_state(s2)
+
+
+class TestTrajectory:
+    def test_add_step(self):
+        t = Trajectory(task="triangle")
+        t.add_step(prompt="p", completion="c", reward=1.0, done=True, state_hash=0)
+        assert t.length == 1
+        assert t.total_reward == 1.0
+
+    def test_total_reward_sums(self):
+        t = Trajectory(task="quarter_fold")
+        t.add_step(prompt="p1", completion="c1", reward=0.5, done=False, state_hash=0)
+        t.add_step(prompt="p2", completion="c2", reward=0.7, done=True, state_hash=1)
+        assert t.length == 2
+        assert abs(t.total_reward - 1.2) < 1e-6
+
+
+class TestCurriculum:
+    def test_phase_1(self):
+        assert get_task_pool(0) == ["triangle", "half_fold"]
+        assert get_task_pool(100) == ["triangle", "half_fold"]
+        assert get_task_pool(199) == ["triangle", "half_fold"]
+
+    def test_phase_2(self):
+        pool = get_task_pool(200)
+        assert "quarter_fold" in pool
+        assert "letter_fold" in pool
+
+    def test_phase_3(self):
+        pool = get_task_pool(500)
+        assert "waterbomb_base" in pool
+
+    def test_phase_4(self):
+        pool = get_task_pool(900)
+        assert "map_fold" in pool
+
+    def test_beyond_max_uses_last_phase(self):
+        pool = get_task_pool(9999)
+        assert "map_fold" in pool
+
+
+class TestEnvPool:
+    def test_reset_and_step(self):
+        pool = OrigamiEnvPool(pool_size=2)
+        obs = pool.reset(0, "triangle")
+        assert not obs.done
+        assert len(obs.anchor_points) >= 4
+
+        obs = pool.step(0, {"from": [0, 0], "to": [1, 1], "assignment": "V"})
+        assert obs.reward is not None
+
+    def test_batch_step(self):
+        pool = OrigamiEnvPool(pool_size=4)
+        for i in range(4):
+            pool.reset(i, "triangle")
+        creases = [{"from": [0, 0], "to": [1, 1], "assignment": "V"}] * 4
+        results = pool.step_batch([0, 1, 2, 3], creases)
+        assert len(results) == 4
+        assert all(r.reward is not None for r in results)
+
+    def test_get_paper_state(self):
+        pool = OrigamiEnvPool(pool_size=1)
+        pool.reset(0, "triangle")
+        ps = pool.get_paper_state(0)
+        assert ps is not None
+        assert isinstance(ps, PaperState)
+
+
+class TestGiGPO:
+    def test_episode_level_ordering(self):
+        trajs = [Trajectory(task="triangle") for _ in range(4)]
+        for i, t in enumerate(trajs):
+            t.add_step(prompt="", completion="", reward=float(i + 1),
+                       done=True, state_hash=0)
+        advantages = compute_gigpo_advantages(trajs, alpha=1.0)
+        # Higher reward should have higher advantage
+        assert advantages[0][0] < advantages[3][0]
+
+    def test_step_level_grouping(self):
+        trajs = [Trajectory(task="triangle") for _ in range(4)]
+        for i, t in enumerate(trajs):
+            t.add_step(prompt="", completion="", reward=float(i),
+                       done=True, state_hash=42)
+        advantages = compute_gigpo_advantages(trajs, alpha=0.0)
+        assert advantages[0][0] < advantages[3][0]
+
+    def test_singleton_group_returns_zero(self):
+        trajs = [Trajectory(task="t") for _ in range(2)]
+        trajs[0].add_step(prompt="", completion="", reward=10.0,
+                          done=True, state_hash=1)
+        trajs[1].add_step(prompt="", completion="", reward=0.0,
+                          done=True, state_hash=2)
+        advantages = compute_gigpo_advantages(trajs, alpha=0.0)
+        assert advantages[0][0] == 0.0
+        assert advantages[1][0] == 0.0
+
+    def test_empty_trajectories(self):
+        assert compute_gigpo_advantages([]) == []
+
+    def test_reward_manager_alpha_annealing(self):
+        mgr = GiGPORewardManager(alpha_start=1.0, alpha_end=0.3,
+                                  warmup_steps=100, total_steps=1000)
+        assert mgr.alpha == 1.0
+        mgr.global_step = 100
+        assert mgr.alpha == 1.0  # at warmup boundary
+        mgr.global_step = 550
+        assert 0.3 < mgr.alpha < 1.0  # midway
+        mgr.global_step = 1000
+        assert abs(mgr.alpha - 0.3) < 0.01  # at end
+
+
+class TestPromptBuilder:
+    def test_builds_from_observation(self):
+        env = OrigamiEnvironment()
+        obs = env.reset(task_name="triangle")
+        task_info = get_task("triangle")
+        prompt = build_prompt_from_obs("triangle", task_info, obs)
+        assert "triangle" in prompt.lower() or "diagonal" in prompt.lower()
+        assert "(0,0)" in prompt or "(0.0,0.0)" in prompt
+
+    def test_includes_crease_history(self):
+        env = OrigamiEnvironment(mode="step")
+        obs = env.reset(task_name="quarter_fold")
+        env.step(OrigamiAction(crease={"from": [0.5, 0], "to": [0.5, 1], "assignment": "V"}))
+        # Manually construct an obs with creases for testing
+        obs2 = env.step(OrigamiAction(crease={"from": [0, 0.5], "to": [1, 0.5], "assignment": "V"}))
+        # obs2 should have current_creases populated (the env records them)
+        # We just verify the prompt builder doesn't crash with real data
+        task_info = get_task("quarter_fold")
+        prompt = build_prompt_from_obs("quarter_fold", task_info, obs)
+        assert "step 0" in prompt or "step 0 of" in prompt
+
+
+class TestExtractCreaseJson:
+    def test_valid_crease(self):
+        text = '{"from": [0.5, 0], "to": [0.5, 1], "assignment": "V"}'
+        result = extract_crease_json(text)
+        assert result is not None
+        assert result["assignment"] == "V"
+
+    def test_invalid_json(self):
+        assert extract_crease_json("not json") is None
+
+    def test_missing_fields(self):
+        assert extract_crease_json('{"from": [0, 0]}') is None
+
+
+class TestValidCrease:
+    def test_valid(self):
+        import json
+        good = [[{"content": json.dumps({"from": [0, 0], "to": [1, 1], "assignment": "V"})}]]
+        scores = valid_crease(good)
+        assert scores[0] == 1.0
+
+    def test_invalid_assignment(self):
+        import json
+        bad = [[{"content": json.dumps({"from": [0, 0], "to": [1, 1], "assignment": "X"})}]]
+        scores = valid_crease(bad)
+        assert scores[0] == -0.5
+
+    def test_not_json(self):
+        bad = [[{"content": "hello world"}]]
+        scores = valid_crease(bad)
+        assert scores[0] == -2.0
+
+
+class TestCompletionBonus:
+    def test_difficulty_scaling(self):
+        assert COMPLETION_BONUS[1] == 2.0
+        assert COMPLETION_BONUS[4] == 15.0
+
+
+class TestTasksV3:
+    def test_six_tasks(self):
+        assert len(list_tasks()) == 6
+
+    def test_all_tasks_have_max_folds(self):
+        for name in list_tasks():
+            task = get_task(name)
+            assert "max_folds" in task, f"Task {name} missing max_folds"
+            assert task["max_folds"] >= 1
+
+
+class TestRollout:
+    def test_rollout_with_mock_generate(self):
+        from training.rollout import run_rollout_batch
+
+        def mock_gen(prompts):
+            return ['{"from": [0,0], "to": [1,1], "assignment": "V"}'] * len(prompts)
+
+        trajs = run_rollout_batch(
+            generate_fn=mock_gen,
+            task_pool=["triangle"],
+            batch_size=4,
+        )
+        assert len(trajs) == 4
+        assert all(t.length == 1 for t in trajs)  # triangle max_folds=1
+        assert all(t.steps[0].done for t in trajs)
+        assert all(t.total_reward > 0 for t in trajs)
+
+    def test_rollout_multistep_task(self):
+        from training.rollout import run_rollout_batch
+
+        def mock_gen(prompts):
+            return ['{"from": [0.5,0], "to": [0.5,1], "assignment": "V"}'] * len(prompts)
+
+        trajs = run_rollout_batch(
+            generate_fn=mock_gen,
+            task_pool=["quarter_fold"],
+            batch_size=2,
+        )
+        assert len(trajs) == 2
+        assert all(t.length == 2 for t in trajs)  # quarter_fold max_folds=2
+
+    def test_rollout_invalid_json_handled(self):
+        from training.rollout import run_rollout_batch
+
+        def bad_gen(prompts):
+            return ["not valid json"] * len(prompts)
+
+        trajs = run_rollout_batch(
+            generate_fn=bad_gen,
+            task_pool=["triangle"],
+            batch_size=2,
+        )
+        assert len(trajs) == 2
+        # Should have 1 step with -2.0 reward (parse failure)
+        assert all(t.length == 1 for t in trajs)
+        assert all(t.steps[0].reward == -2.0 for t in trajs)
+
+    def test_rollout_gigpo_integration(self):
+        """End-to-end: rollout → GiGPO advantages."""
+        from training.rollout import run_rollout_batch
+        from training.gigpo import compute_gigpo_advantages
+
+        def mock_gen(prompts):
+            return ['{"from": [0,0], "to": [1,1], "assignment": "V"}'] * len(prompts)
+
+        trajs = run_rollout_batch(
+            generate_fn=mock_gen,
+            task_pool=["triangle"],
+            batch_size=8,
+        )
+        advantages = compute_gigpo_advantages(trajs, alpha=0.5)
+        assert len(advantages) == 8
+        assert all(len(a) == 1 for a in advantages)

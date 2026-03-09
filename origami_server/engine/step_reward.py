@@ -330,7 +330,8 @@ def compute_reward(
     r['degree_sanity'] = check_degree_sanity(new_state.graph)
 
     # LEVEL 4: Progress (absolute + delta)
-    t_edges = target_crease_edges(target)
+    fold_target = target.get("target_fold", target)
+    t_edges = target_crease_edges(fold_target)
     old_coverage, _, _ = geometric_crease_coverage(prev_state, t_edges)
     new_coverage, economy, assignment_accuracy = geometric_crease_coverage(new_state, t_edges)
 
