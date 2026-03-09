@@ -30,26 +30,35 @@ from training.rollout import run_rollout_batch
 from training.trajectory import Trajectory
 
 
-class ExplorationNoiseProcessor(LogitsProcessor):
-    """Add Gaussian noise to logits to force diverse outputs for GRPO.
+class EpsilonGreedyProcessor(LogitsProcessor):
+    """Epsilon-greedy exploration: with probability epsilon, replace logits
+    with uniform distribution over top-k tokens.
 
-    Without this, the model produces identical completions for similar prompts
-    (even with temperature scaling), resulting in zero reward variance and
-    no GRPO learning signal.
+    This guarantees diverse completions regardless of logit magnitude,
+    solving the fundamental GRPO problem where peaked distributions
+    (logit gaps of 50+) make Gaussian noise and temperature scaling useless.
     """
-    def __init__(self, noise_scale: float = 3.0):
-        self.noise_scale = noise_scale
+    def __init__(self, epsilon: float = 0.3, top_k: int = 10):
+        self.epsilon = epsilon
+        self.top_k = top_k
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
-        return scores + self.noise_scale * torch.randn_like(scores)
+        batch_size = scores.shape[0]
+        mask = torch.rand(batch_size, 1, device=scores.device) < self.epsilon
+
+        top_k_vals, top_k_idx = scores.topk(self.top_k, dim=-1)
+        uniform = torch.full_like(scores, float('-inf'))
+        uniform.scatter_(-1, top_k_idx, 0.0)
+
+        return torch.where(mask.expand_as(scores), uniform, scores)
 
 
 def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128,
-                      noise_scale=3.0, top_k=0):
+                      noise_scale=3.0, top_k=0, epsilon=0.0):
     """Wrap model.generate() to match rollout's expected interface."""
     logits_processor = LogitsProcessorList([
-        ExplorationNoiseProcessor(noise_scale=noise_scale),
-    ]) if noise_scale > 0 else None
+        EpsilonGreedyProcessor(epsilon=epsilon, top_k=max(top_k, 10)),
+    ]) if epsilon > 0 else None
 
     def generate_fn(prompts: list[str]) -> list[str]:
         messages_batch = [
@@ -245,6 +254,8 @@ def main():
                         help="Gaussian noise added to logits for exploration (0=disabled)")
     parser.add_argument("--top-k", type=int, default=0,
                         help="Top-k sampling to force token diversity (0=disabled)")
+    parser.add_argument("--epsilon", type=float, default=0.0,
+                        help="Epsilon-greedy exploration: probability of uniform sampling over top-k tokens")
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
     parser.add_argument("--tasks", default="auto",
@@ -342,6 +353,7 @@ def main():
             max_new_tokens=128,
             noise_scale=args.noise_scale,
             top_k=args.top_k,
+            epsilon=args.epsilon,
         )
 
         trajectories = run_rollout_batch(
