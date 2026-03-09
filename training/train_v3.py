@@ -103,24 +103,29 @@ def compute_log_probs(model, tokenizer, prompt: str, completion: str) -> torch.T
     return token_log_probs.sum()
 
 
-def compute_ref_log_probs(ref_model, tokenizer, prompt: str, completion: str) -> torch.Tensor:
-    """Compute log probs under reference model for KL penalty."""
+def compute_ref_log_probs(model, tokenizer, prompt: str, completion: str) -> torch.Tensor:
+    """Compute log probs under base model (LoRA disabled) for KL penalty."""
     with torch.no_grad():
-        return compute_log_probs(ref_model, tokenizer, prompt, completion)
+        model.disable_adapter_layers()
+        ref_lp = compute_log_probs(model, tokenizer, prompt, completion)
+        model.enable_adapter_layers()
+        return ref_lp
 
 
 def policy_loss(
     model,
-    ref_model,
     tokenizer,
     trajectories: list[Trajectory],
     advantages: list[list[float]],
     clip_range: float = 0.2,
     kl_coef: float = 0.02,
 ) -> tuple[torch.Tensor, dict]:
-    """Compute clipped surrogate policy gradient loss with KL penalty."""
-    total_loss = torch.tensor(0.0, device=next(model.parameters()).device, requires_grad=True)
-    n_tokens = 0
+    """Compute clipped surrogate policy gradient loss with KL penalty.
+
+    For LoRA models, reference log probs are computed by disabling the adapter.
+    """
+    device = next(model.parameters()).device
+    losses = []
     total_kl = 0.0
     n_steps = 0
 
@@ -131,22 +136,23 @@ def policy_loss(
                 continue
 
             log_prob = compute_log_probs(model, tokenizer, step.prompt, step.completion)
-            with torch.no_grad():
-                ref_log_prob = compute_log_probs(ref_model, tokenizer, step.prompt, step.completion)
+            ref_log_prob = compute_ref_log_probs(model, tokenizer, step.prompt, step.completion)
 
-            # KL divergence penalty
+            # KL divergence (policy vs reference)
             kl = (log_prob - ref_log_prob).detach()
             total_kl += kl.item()
 
-            # GRPO-style loss: -advantage * log_prob + kl_coef * kl
-            adv_tensor = torch.tensor(adv, device=log_prob.device, dtype=log_prob.dtype)
-            step_loss = -(adv_tensor * log_prob) + kl_coef * kl * log_prob.detach().sign()
+            # REINFORCE-style loss: -advantage * log_prob + KL penalty
+            adv_tensor = torch.tensor(adv, device=device, dtype=log_prob.dtype)
+            step_loss = -(adv_tensor * log_prob) + kl_coef * kl.abs()
 
-            total_loss = total_loss + step_loss
+            losses.append(step_loss)
             n_steps += 1
 
-    if n_steps > 0:
-        total_loss = total_loss / n_steps
+    if losses:
+        total_loss = torch.stack(losses).mean()
+    else:
+        total_loss = torch.tensor(0.0, device=device, requires_grad=False)
 
     metrics = {
         "n_steps": n_steps,
@@ -216,8 +222,7 @@ def main():
 
     model.print_trainable_parameters()
 
-    # Reference model = frozen copy for KL
-    ref_model = model  # For LoRA, the base model IS the reference
+    # For LoRA, reference = base model with adapter disabled (handled in policy_loss)
 
     # ── Optimizer ─────────────────────────────────────────────────────────────
     optimizer = torch.optim.AdamW(
@@ -284,7 +289,6 @@ def main():
 
         loss, metrics = policy_loss(
             model=model,
-            ref_model=ref_model,
             tokenizer=tokenizer,
             trajectories=trajectories,
             advantages=advantages,
