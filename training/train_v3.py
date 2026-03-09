@@ -237,6 +237,61 @@ def policy_loss(
     return total_loss, metrics
 
 
+def sft_loss_on_experts(
+    model,
+    tokenizer,
+    task_pool: list[str],
+    max_pairs: int = 8,
+) -> tuple[torch.Tensor, dict]:
+    """Compute SFT (cross-entropy) loss on expert-searched optimal creases.
+
+    Used as fallback when GRPO has zero variance. Enumerates all valid creases
+    for each task's initial state, picks the best one, and trains the model to
+    produce it.
+    """
+    from origami_server.tasks import get_task
+    from training.expert_search import expert_trajectory
+    from training.prompt_builder import build_prompt_from_obs
+
+    device = next(model.parameters()).device
+    losses = []
+    n_pairs = 0
+
+    for task_name in task_pool:
+        task_info = get_task(task_name)
+        traj = expert_trajectory(task_name, task_info)
+        if not traj:
+            continue
+
+        for step_data in traj[:max_pairs]:
+            obs = step_data["obs"]
+            target_completion = step_data["completion"]
+
+            prompt = build_prompt_from_obs(
+                task_name, task_info, obs, randomize=False,
+            )
+
+            log_prob, n_tokens = compute_log_probs(
+                model, tokenizer, prompt, target_completion,
+            )
+
+            if n_tokens > 0:
+                losses.append(-log_prob / n_tokens)
+                n_pairs += 1
+
+            if n_pairs >= max_pairs:
+                break
+        if n_pairs >= max_pairs:
+            break
+
+    if losses:
+        total_loss = torch.stack(losses).mean()
+    else:
+        total_loss = torch.tensor(0.0, device=device, requires_grad=False)
+
+    return total_loss, {"sft_pairs": n_pairs}
+
+
 def save_checkpoint(model, tokenizer, output_dir: str, step: int):
     ckpt_path = os.path.join(output_dir, f"checkpoint-{step}")
     model.save_pretrained(ckpt_path)
@@ -388,6 +443,19 @@ def main():
             max_kl_per_token=args.max_kl_per_token,
         )
 
+        # Hybrid: fall back to SFT on expert search when GRPO has no signal
+        flat_advs = [a for adv_list in advantages for a in adv_list]
+        adv_nonzero = sum(1 for a in flat_advs if abs(a) > 1e-10)
+        sft_metrics = {}
+
+        if adv_nonzero == 0:
+            sft_loss_val, sft_metrics = sft_loss_on_experts(
+                model, tokenizer, task_pool, max_pairs=len(task_pool) * 2,
+            )
+            if sft_loss_val.requires_grad:
+                loss = sft_loss_val
+                metrics.update(sft_metrics)
+
         if loss.requires_grad:
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -413,10 +481,8 @@ def main():
                 f"{k}:{np.mean(v):.2f}" for k, v in sorted(task_rewards.items())
             )
 
-            # Advantage diagnostics
-            flat_advs = [a for adv_list in advantages for a in adv_list]
-            adv_nonzero = sum(1 for a in flat_advs if abs(a) > 1e-10)
             adv_std = float(np.std(flat_advs)) if flat_advs else 0.0
+            mode = "sft" if sft_metrics.get("sft_pairs", 0) > 0 else "grpo"
 
             print(
                 f"step {global_step + 1}/{args.max_steps}  "
@@ -427,7 +493,7 @@ def main():
                 f"complete={completion_rate:.0f}%  "
                 f"adv_nz={adv_nonzero}/{len(flat_advs)}  "
                 f"adv_std={adv_std:.3f}  "
-                f"alpha={reward_manager.alpha:.2f}  "
+                f"mode={mode}  "
                 f"kl/t={metrics.get('mean_kl_per_token', 0):.4f}  "
                 f"kl_skip={metrics.get('kl_skipped', 0)}  "
                 f"tasks=[{task_summary}]  "
