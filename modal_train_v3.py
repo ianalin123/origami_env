@@ -68,6 +68,8 @@ def train(
     load_in_4bit: bool = False,
     resume: bool = False,
     lr: float = 5e-5,
+    noise_scale: float = 1.5,
+    temperature: float = 1.5,
 ):
     os.environ["OUTPUT_DIR"] = OUTPUTS_DIR
 
@@ -81,6 +83,8 @@ def train(
             "--batch-size", str(batch_size),
             "--lr", str(lr),
             "--lora-rank", str(lora_rank),
+            "--noise-scale", str(noise_scale),
+            "--temperature", str(temperature),
             "--tasks", tasks,
             "--output-dir", OUTPUTS_DIR,
             "--save-steps", "50",
@@ -113,6 +117,8 @@ def main(
     load_in_4bit: bool = False,
     resume: bool = False,
     lr: float = 5e-5,
+    noise_scale: float = 1.5,
+    temperature: float = 1.5,
 ):
     train.remote(
         max_steps=max_steps,
@@ -123,4 +129,6 @@ def main(
         load_in_4bit=load_in_4bit,
         resume=resume,
         lr=lr,
+        noise_scale=noise_scale,
+        temperature=temperature,
     )
