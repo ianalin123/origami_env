@@ -118,16 +118,20 @@ def policy_loss(
     trajectories: list[Trajectory],
     advantages: list[list[float]],
     clip_range: float = 0.2,
-    kl_coef: float = 0.02,
+    kl_coef: float = 0.1,
+    max_kl: float = 5.0,
 ) -> tuple[torch.Tensor, dict]:
-    """Compute clipped surrogate policy gradient loss with KL penalty.
+    """Compute GRPO-style policy gradient loss with KL penalty.
 
     For LoRA models, reference log probs are computed by disabling the adapter.
+    KL penalty is gradient-carrying to actually constrain divergence.
+    Steps where KL > max_kl are skipped to prevent catastrophic forgetting.
     """
     device = next(model.parameters()).device
     losses = []
     total_kl = 0.0
     n_steps = 0
+    n_kl_skipped = 0
 
     for i, traj in enumerate(trajectories):
         for t, step in enumerate(traj.steps):
@@ -138,13 +142,22 @@ def policy_loss(
             log_prob = compute_log_probs(model, tokenizer, step.prompt, step.completion)
             ref_log_prob = compute_ref_log_probs(model, tokenizer, step.prompt, step.completion)
 
-            # KL divergence (policy vs reference)
-            kl = (log_prob - ref_log_prob).detach()
-            total_kl += kl.item()
+            # KL divergence: log(pi/pi_ref) = log_pi - log_pi_ref
+            # This is gradient-carrying w.r.t. log_prob
+            kl = log_prob - ref_log_prob
 
-            # REINFORCE-style loss: -advantage * log_prob + KL penalty
+            # Skip if KL too large (prevents catastrophic divergence)
+            kl_val = kl.detach().item()
+            if abs(kl_val) > max_kl:
+                n_kl_skipped += 1
+                continue
+
+            total_kl += abs(kl_val)
+
+            # GRPO loss: -advantage * log_prob + kl_coef * KL
+            # Both terms carry gradients through log_prob
             adv_tensor = torch.tensor(adv, device=device, dtype=log_prob.dtype)
-            step_loss = -(adv_tensor * log_prob) + kl_coef * kl.abs()
+            step_loss = -(adv_tensor * log_prob) + kl_coef * kl
 
             losses.append(step_loss)
             n_steps += 1
@@ -157,6 +170,7 @@ def policy_loss(
     metrics = {
         "n_steps": n_steps,
         "mean_kl": total_kl / max(n_steps, 1),
+        "kl_skipped": n_kl_skipped,
     }
     return total_loss, metrics
 
@@ -173,10 +187,11 @@ def main():
     parser.add_argument("--model", default="unsloth/Qwen2.5-3B-Instruct")
     parser.add_argument("--max-steps", type=int, default=1500)
     parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--lr", type=float, default=2e-4)
+    parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--clip-range", type=float, default=0.2)
-    parser.add_argument("--kl-coef", type=float, default=0.02)
+    parser.add_argument("--kl-coef", type=float, default=0.1)
+    parser.add_argument("--max-kl", type=float, default=5.0)
     parser.add_argument("--temperature", type=float, default=0.7)
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
@@ -294,6 +309,7 @@ def main():
             advantages=advantages,
             clip_range=args.clip_range,
             kl_coef=args.kl_coef,
+            max_kl=args.max_kl,
         )
 
         if loss.requires_grad:
@@ -337,6 +353,7 @@ def main():
                 f"adv_std={adv_std:.3f}  "
                 f"alpha={reward_manager.alpha:.2f}  "
                 f"kl={metrics['mean_kl']:.4f}  "
+                f"kl_skip={metrics.get('kl_skipped', 0)}  "
                 f"tasks=[{task_summary}]  "
                 f"time={step_time:.1f}s"
             )
