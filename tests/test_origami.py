@@ -356,21 +356,22 @@ class TestTrajectory:
 
 class TestCurriculum:
     def test_phase_1(self):
-        assert get_task_pool(0) == ["triangle", "half_fold"]
-        assert get_task_pool(100) == ["triangle", "half_fold"]
-        assert get_task_pool(199) == ["triangle", "half_fold"]
+        pool = get_task_pool(0)
+        assert "triangle" in pool
+        assert "quarter_fold" in pool  # multi-step from start
+        assert get_task_pool(50) == pool
 
     def test_phase_2(self):
-        pool = get_task_pool(200)
+        pool = get_task_pool(100)
         assert "quarter_fold" in pool
         assert "letter_fold" in pool
 
     def test_phase_3(self):
-        pool = get_task_pool(500)
+        pool = get_task_pool(300)
         assert "waterbomb_base" in pool
 
     def test_phase_4(self):
-        pool = get_task_pool(900)
+        pool = get_task_pool(700)
         assert "map_fold" in pool
 
     def test_beyond_max_uses_last_phase(self):
@@ -633,12 +634,12 @@ class TestTrainV3Components:
 
         early = get_task_pool(0)
         mid = get_task_pool(300)
-        late = get_task_pool(1000)
+        late = get_task_pool(800)
 
         assert "triangle" in early
-        assert "quarter_fold" in mid
-        assert "waterbomb_base" in late
-        assert len(late) <= len(mid) or "map_fold" in late
+        assert "quarter_fold" in early  # multi-step from start
+        assert "waterbomb_base" in mid
+        assert "map_fold" in late
 
     def test_reward_manager_alpha_schedule(self):
         """Alpha anneals from 1.0 to 0.3 over training."""

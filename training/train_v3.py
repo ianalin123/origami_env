@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.cuda.amp import autocast
+from torch.amp import autocast
 
 from training.curriculum import get_task_pool
 from training.gigpo import GiGPORewardManager
@@ -90,7 +90,7 @@ def compute_log_probs(model, tokenizer, prompt: str, completion: str) -> torch.T
     if full_ids.shape[1] <= prompt_len:
         return torch.tensor(0.0, device=model.device)
 
-    with autocast(dtype=torch.bfloat16):
+    with autocast("cuda", dtype=torch.bfloat16):
         logits = model(full_ids).logits
 
     # Shift logits and labels for next-token prediction
