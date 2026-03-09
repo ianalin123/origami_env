@@ -34,7 +34,7 @@ image = (
         "pip install -q unsloth unsloth_zoo",
         "pip install -q numpy scipy shapely pydantic 'openenv-core[core]>=0.2.1'",
     )
-    .env({"PYTHONPATH": "/app"})
+    .env({"PYTHONPATH": "/app", "PYTHONUNBUFFERED": "1"})
     .add_local_dir(
         ".",
         remote_path="/app",
@@ -75,7 +75,7 @@ def train(
         ckpt = _latest_checkpoint(OUTPUTS_DIR) if resume else None
 
         cmd = [
-            sys.executable, "-m", "training.train_v3",
+            sys.executable, "-u", "-m", "training.train_v3",
             "--model", model_name,
             "--max-steps", str(max_steps),
             "--batch-size", str(batch_size),
