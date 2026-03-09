@@ -219,15 +219,15 @@ def main():
     parser.add_argument("--model", default="unsloth/Qwen2.5-3B-Instruct")
     parser.add_argument("--max-steps", type=int, default=1500)
     parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--num-per-task", type=int, default=4,
+    parser.add_argument("--num-per-task", type=int, default=8,
                         help="Number of episodes per task (GRPO needs >=4 for reward variance)")
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--lora-rank", type=int, default=32)
     parser.add_argument("--clip-range", type=float, default=0.2)
     parser.add_argument("--kl-coef", type=float, default=0.1)
-    parser.add_argument("--max-kl-per-token", type=float, default=0.5)
+    parser.add_argument("--max-kl-per-token", type=float, default=0.2)
     parser.add_argument("--temperature", type=float, default=1.5)
-    parser.add_argument("--noise-scale", type=float, default=3.0,
+    parser.add_argument("--noise-scale", type=float, default=1.5,
                         help="Gaussian noise added to logits for exploration (0=disabled)")
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
@@ -286,9 +286,11 @@ def main():
     )
 
     # ── GiGPO reward manager ─────────────────────────────────────────────────
+    # Alpha=1.0 (pure episode-level GRPO) throughout training.
+    # Step-level advantages + exploration noise caused collapse in run 8.
     reward_manager = GiGPORewardManager(
         alpha_start=1.0,
-        alpha_end=0.3,
+        alpha_end=1.0,
         warmup_steps=200,
         total_steps=args.max_steps,
     )
