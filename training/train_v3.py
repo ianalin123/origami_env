@@ -22,14 +22,35 @@ import torch
 import torch.nn.functional as F
 from torch.amp import autocast
 
+from transformers import LogitsProcessor, LogitsProcessorList
+
 from training.curriculum import get_task_pool
 from training.gigpo import GiGPORewardManager
 from training.rollout import run_rollout_batch
 from training.trajectory import Trajectory
 
 
-def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128):
+class ExplorationNoiseProcessor(LogitsProcessor):
+    """Add Gaussian noise to logits to force diverse outputs for GRPO.
+
+    Without this, the model produces identical completions for similar prompts
+    (even with temperature scaling), resulting in zero reward variance and
+    no GRPO learning signal.
+    """
+    def __init__(self, noise_scale: float = 3.0):
+        self.noise_scale = noise_scale
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
+        return scores + self.noise_scale * torch.randn_like(scores)
+
+
+def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128,
+                      noise_scale=3.0):
     """Wrap model.generate() to match rollout's expected interface."""
+    logits_processor = LogitsProcessorList([
+        ExplorationNoiseProcessor(noise_scale=noise_scale),
+    ]) if noise_scale > 0 else None
+
     def generate_fn(prompts: list[str]) -> list[str]:
         messages_batch = [
             [{"role": "system", "content": "/no_think"},
@@ -50,14 +71,18 @@ def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128):
             max_length=512,
         ).to(model.device)
 
+        gen_kwargs = dict(
+            **encodings,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            do_sample=True,
+            pad_token_id=tokenizer.pad_token_id,
+        )
+        if logits_processor:
+            gen_kwargs["logits_processor"] = logits_processor
+
         with torch.no_grad():
-            outputs = model.generate(
-                **encodings,
-                max_new_tokens=max_new_tokens,
-                temperature=temperature,
-                do_sample=True,
-                pad_token_id=tokenizer.pad_token_id,
-            )
+            outputs = model.generate(**gen_kwargs)
 
         completions = []
         for i, out in enumerate(outputs):
@@ -202,6 +227,8 @@ def main():
     parser.add_argument("--kl-coef", type=float, default=0.1)
     parser.add_argument("--max-kl-per-token", type=float, default=0.5)
     parser.add_argument("--temperature", type=float, default=1.5)
+    parser.add_argument("--noise-scale", type=float, default=3.0,
+                        help="Gaussian noise added to logits for exploration (0=disabled)")
     parser.add_argument("--save-steps", type=int, default=50)
     parser.add_argument("--log-steps", type=int, default=5)
     parser.add_argument("--tasks", default="auto",
@@ -295,6 +322,7 @@ def main():
             model, tokenizer,
             temperature=args.temperature,
             max_new_tokens=128,
+            noise_scale=args.noise_scale,
         )
 
         trajectories = run_rollout_batch(
