@@ -30,34 +30,41 @@ from training.rollout import run_rollout_batch
 from training.trajectory import Trajectory
 
 
-class EpsilonGreedyProcessor(LogitsProcessor):
-    """Epsilon-greedy exploration: with probability epsilon, replace logits
-    with uniform distribution over top-k tokens.
+class ConfidenceEpsilonProcessor(LogitsProcessor):
+    """Apply epsilon-greedy ONLY when the model is too confident.
 
-    This guarantees diverse completions regardless of logit magnitude,
-    solving the fundamental GRPO problem where peaked distributions
-    (logit gaps of 50+) make Gaussian noise and temperature scaling useless.
+    When top-1 probability exceeds confidence_threshold, replace logits with
+    uniform distribution over top-k tokens with probability epsilon.
+    This targets exactly the peaked tokens that cause GRPO reconvergence
+    (JSON structure tokens with logit gaps of 50+) while leaving uncertain
+    tokens alone — so format-critical tokens stay correct most of the time
+    but value tokens (coordinates, assignments) get explored.
     """
-    def __init__(self, epsilon: float = 0.3, top_k: int = 10):
+    def __init__(self, epsilon: float = 0.3, top_k: int = 10,
+                 confidence_threshold: float = 0.95):
         self.epsilon = epsilon
         self.top_k = top_k
+        self.confidence_threshold = confidence_threshold
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
-        batch_size = scores.shape[0]
-        mask = torch.rand(batch_size, 1, device=scores.device) < self.epsilon
+        probs = torch.softmax(scores, dim=-1)
+        top1_prob = probs.max(dim=-1, keepdim=True).values
+        is_confident = top1_prob > self.confidence_threshold
+
+        should_explore = (torch.rand_like(top1_prob) < self.epsilon) & is_confident
 
         top_k_vals, top_k_idx = scores.topk(self.top_k, dim=-1)
         uniform = torch.full_like(scores, float('-inf'))
         uniform.scatter_(-1, top_k_idx, 0.0)
 
-        return torch.where(mask.expand_as(scores), uniform, scores)
+        return torch.where(should_explore.expand_as(scores), uniform, scores)
 
 
 def build_generate_fn(model, tokenizer, temperature=0.7, max_new_tokens=128,
                       noise_scale=3.0, top_k=0, epsilon=0.0):
     """Wrap model.generate() to match rollout's expected interface."""
     logits_processor = LogitsProcessorList([
-        EpsilonGreedyProcessor(epsilon=epsilon, top_k=max(top_k, 10)),
+        ConfidenceEpsilonProcessor(epsilon=epsilon, top_k=max(top_k, 10)),
     ]) if epsilon > 0 else None
 
     def generate_fn(prompts: list[str]) -> list[str]:
